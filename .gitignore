@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 env.js
+
+# test
+test.js
