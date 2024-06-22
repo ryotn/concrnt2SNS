@@ -50,7 +50,7 @@ function receivedPost(data) {
         console.log(`Files:${files}`)
 
         if (body.length > 0 || files.length > 0) {
-            image.downloder(files).then(filesBuffer => {
+            image.downloader(files).then(filesBuffer => {
                 twitterClient.tweet(body, filesBuffer)
                 bskyClient.post(body, filesBuffer)
             })

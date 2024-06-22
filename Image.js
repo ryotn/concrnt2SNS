@@ -2,7 +2,7 @@
 const sharp = require('sharp')
 
 class Image {
-    async downloder(files) {
+    async downloader(files) {
         return await Promise.all(files.map(async (file) => {
             const url = file.url
             const type = file.type
@@ -20,30 +20,6 @@ class Image {
                 }
             }
         }))
-
-        /*let filesBuffer = []
-        for await (file of files) {
-            const url = file.url
-            const type = file.type
-            if (type.indexOf("image") >= 0) { //動画は一旦無視
-                const response = await fetch(url)
-                const arrayBuffer = await response.arrayBuffer()
-                const resize = await resize(arrayBuffer)
-                const dataArray = new Uint8Array(resize)
-
-                filesBuffer.push({
-                    "url": url,
-                    "buffer": resize,
-                    "uint8Array": dataArray,
-                    "type": "image/jpeg"
-                })
-            }
-        }
-
-
-        console.log(filesBuffer)
-
-        return filesBuffer*/
     }
 
     async resize(arrayBuffer) {
