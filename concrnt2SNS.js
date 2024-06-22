@@ -6,9 +6,6 @@ const AtProtocol = require('./AtProtocol.js')
 const CCMsgAnalysis = require('./ConcrntMessageAnalysis.js')
 
 const CC_SUBKEY = env.CC_SUBKEY
-const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
-const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
-const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
 
 const TW_API_KEY = env.TW_API_KEY
 const TW_API_KEY_SECRET = env.TW_API_KEY_SECRET
