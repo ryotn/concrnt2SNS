@@ -1,11 +1,12 @@
 
+const emojiMap = require('./emojiMap.json')
 const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
 const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
 const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
 
 class ConcrntMessageAnalysis {
     getPlaneText(body) {
-        return this.removeMarkdown(body)
+        return this.replaceEmojis(this.removeMarkdown(body), emojiMap)
     }
 
     getMediaFiles(body) {
@@ -51,6 +52,17 @@ class ConcrntMessageAnalysis {
             // Remove extra spaces and newlines
             .replace(/^\s+|\s+$/g, "")
             .replace(/\n{2,}/g, "\n");
+    }
+
+    replaceEmojis(text, emojiMap) {
+        return text.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
+            for (const key in emojiMap) {
+                if (match.indexOf(key) > 0) {
+                    return emojiMap[key];
+                }
+            }
+            return match
+        })
     }
 }
 
