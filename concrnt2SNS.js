@@ -3,6 +3,7 @@ const env = require('./env.js')
 const ImageResize = require('./Image.js')
 const Twitter = require('./Twitter.js')
 const AtProtocol = require('./AtProtocol.js')
+const CCMsgAnalysis = require('./ConcrntMessageAnalysis.js')
 
 const CC_SUBKEY = env.CC_SUBKEY
 const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
@@ -22,6 +23,7 @@ const BS_SERVICE = env.BS_SERVICE
 const image = new ImageResize()
 const twitterClient = new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET)
 const bskyClient = new AtProtocol(BS_SERVICE, BS_IDENTIFIR, BS_APP_PASSWORD)
+const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
     const client = await cc.Client.createFromSubkey(CC_SUBKEY)
@@ -39,20 +41,16 @@ async function start() {
 
 function receivedPost(data) {
     if (data.document.schema == "https://schema.concrnt.world/m/markdown.json") {
-        let body = data.document.body.body.replace(CC_IMG_PATTERN, "").replace(CC_VIDEO_PATTERN, "")
-        let files = data.document.body.body.match(CC_IMG_PATTERN)?.map((url) => {
-            return {
-                url: url.match(CC_URL_PATTERN)?.[0] ?? "",
-                type: "image"
-            }
-        }) ?? []
+        const body = data.document.body.body
+        const text = ccMsgAnalysis.getPlaneText(body)
+        const files = ccMsgAnalysis.getMediaFiles(body)
 
-        console.log(`Files:${files}`)
+        console.log(`Files:${JSON.stringify(files, null, 2)}`)
 
-        if (body.length > 0 || files.length > 0) {
+        if (text.length > 0 || files.length > 0) {
             image.downloader(files).then(filesBuffer => {
-                twitterClient.tweet(body, filesBuffer)
-                bskyClient.post(body, filesBuffer)
+                twitterClient.tweet(text, filesBuffer)
+                bskyClient.post(text, filesBuffer)
             })
         }
     }
