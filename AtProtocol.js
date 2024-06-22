@@ -42,7 +42,8 @@ class AtProtocol {
     }
 
     async uploadMedia(filesBuffer) {
-        return await Promise.all(filesBuffer.map(async (file) => {
+        //Blueskyは動画未対応なので画像だけアップロード
+        return await Promise.all(filesBuffer.filter((file) => file.type.indexOf("image") >= 0).map(async (file) => {
             const result = await this.agent.uploadBlob(
                 file.uint8Array,
                 {

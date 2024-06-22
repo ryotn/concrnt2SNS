@@ -29,7 +29,11 @@ class Twitter {
         return await Promise.all(filesBuffer.map(async (file) => {
             const buffer = file.buffer
             const type = file.type
-            const id = await this.twitterClient.v1.uploadMedia(buffer, { mimeType: type })
+            let option = { mimeType: type }
+            if (type == "video/mp4") {
+                option.longVideo = true
+            }
+            const id = await this.twitterClient.v1.uploadMedia(buffer, option)
 
             return id
         }))
