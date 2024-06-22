@@ -2,22 +2,22 @@
 const sharp = require('sharp')
 
 class Image {
-    async downloader(files) {
-        return await Promise.all(files.map(async (file) => {
-            const url = file.url
-            const type = file.type
-            if (type.indexOf("image") >= 0) { //動画は一旦無視
-                const response = await fetch(url)
-                const arrayBuffer = await response.arrayBuffer()
-                const resize = await this.resize(arrayBuffer)
-                const dataArray = new Uint8Array(resize)
+    async downloader(files) { //動画はそのうち・・・
+        const images = files.filter((file) => file.type.indexOf("image") >= 0)
+        const videos = files.filter((file) => file.type.indexOf("video") >= 0)
 
-                return {
-                    "url": url,
-                    "buffer": resize,
-                    "uint8Array": dataArray,
-                    "type": "image/jpeg"
-                }
+        return await Promise.all(images.map(async (file) => {
+            const url = file.url
+            const response = await fetch(url)
+            const arrayBuffer = await response.arrayBuffer()
+            const resize = await this.resize(arrayBuffer)
+            const dataArray = new Uint8Array(resize)
+
+            return {
+                "url": url,
+                "buffer": resize,
+                "uint8Array": dataArray,
+                "type": "image/jpeg"
             }
         }))
     }
