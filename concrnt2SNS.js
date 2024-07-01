@@ -6,19 +6,21 @@ const CCMsgAnalysis = require('./ConcrntMessageAnalysis.js')
 
 const CC_SUBKEY = process.env.CC_SUBKEY
 
+const TW_ENABLE = process.env.TW_ENABLE == "true"
 const TW_API_KEY = process.env.TW_API_KEY
 const TW_API_KEY_SECRET = process.env.TW_API_KEY_SECRET
 
 const TW_ACCESS_TOKEN = process.env.TW_ACCESS_TOKEN
 const TW_ACCESS_TOKEN_SECRET = process.env.TW_ACCESS_TOKEN_SECRET
 
+const BS_ENABLE = process.env.BS_ENABLE == "true"
 const BS_IDENTIFIER = process.env.BS_IDENTIFIER
 const BS_APP_PASSWORD = process.env.BS_APP_PASSWORD
 const BS_SERVICE = process.env.BS_SERVICE
 
 const image = new ImageResize()
-const twitterClient = new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET)
-const bskyClient = new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
+const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET)
+const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
@@ -45,8 +47,8 @@ function receivedPost(data) {
 
         if (text.length > 0 || files.length > 0) {
             image.downloader(files).then(filesBuffer => {
-                twitterClient.tweet(text, filesBuffer)
-                bskyClient.post(text, filesBuffer)
+                if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
+                if (BS_ENABLE) bskyClient.post(text, filesBuffer)
             })
         }
     }
