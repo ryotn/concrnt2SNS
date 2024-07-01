@@ -1,4 +1,7 @@
 {
+  "scripts": {
+      "start": "node --env-file=.env concrnt2SNS.js"
+  },
   "dependencies": {
     "@atproto/api": "^0.12.21",
     "@concurrent-world/client": "^6.0.17",
