@@ -32,8 +32,9 @@ async function start() {
     const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline
 
     subscription.on('MessageCreated', (message) => {
-        console.log("--------------------------------test")
-        console.log(JSON.stringify(message, null, 2))
+        if (message.document.signer != client.ccid) {
+            return
+        }
         receivedPost(message)
     })
 
