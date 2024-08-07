@@ -18,6 +18,8 @@ const BS_IDENTIFIER = process.env.BS_IDENTIFIER
 const BS_APP_PASSWORD = process.env.BS_APP_PASSWORD
 const BS_SERVICE = process.env.BS_SERVICE
 
+const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
+
 const image = new ImageResize()
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET)
 const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
@@ -27,6 +29,7 @@ async function start() {
     const client = await cc.Client.createFromSubkey(CC_SUBKEY)
 
     const subscription = await client.newSubscription()
+    const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline
 
     subscription.on('MessageCreated', (message) => {
         console.log("--------------------------------test")
@@ -34,7 +37,7 @@ async function start() {
         receivedPost(message)
     })
 
-    subscription.listen([client.user.homeTimeline])
+    subscription.listen([listenTimeline])
 }
 
 function receivedPost(data) {
