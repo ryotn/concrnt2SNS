@@ -18,6 +18,7 @@ BS_IDENTIFIER="BlueskyのIDENTIFIER"
 BS_APP_PASSWORD="BlueskyのAPP_PASSWORD"
 BS_SERVICE="BlueskyのサーバーURL https://bsky.social　とか"
 CC_SUBKEY="コンカレのサブキー"
+LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定"
 ```
 4. `npm start`で多分動く！！
 
