@@ -42,12 +42,17 @@ async function start() {
 }
 
 function receivedPost(data) {
-    if (data.document.schema == "https://schema.concrnt.world/m/markdown.json") {
+    if (data.document.schema == "https://schema.concrnt.world/m/markdown.json" || data.document.schema == "https://schema.concrnt.world/m/media.json") {
         const body = data.document.body.body
         const text = ccMsgAnalysis.getPlaneText(body)
         const files = ccMsgAnalysis.getMediaFiles(body)
 
-        console.log(`Files:${JSON.stringify(files, null, 2)}`)
+        data.document.body.medias?.forEach(media => {
+            files.push({
+                url: media.mediaURL,
+                type: media.mediaType.split("/")[0]
+            })
+        })
 
         if (text.length > 0 || files.length > 0) {
             image.downloader(files).then(filesBuffer => {
