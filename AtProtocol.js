@@ -42,6 +42,7 @@ class AtProtocol {
                 $type: 'app.bsky.feed.post',
             },
             createdAt: new Date().toISOString(),
+            langs: ["ja"],
         }
 
         if (medias != undefined) {
