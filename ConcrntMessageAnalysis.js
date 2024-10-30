@@ -6,7 +6,10 @@ const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
 
 class ConcrntMessageAnalysis {
     getPlaneText(body) {
-        return this.replaceEmojis(this.removeMarkdown(body), emojiMap)
+        return body
+            .removeMarkdown()
+            .replaceEmojis()
+            .replaceSpecialCharacter()
     }
 
     getMediaFiles(body) {
@@ -26,6 +29,7 @@ class ConcrntMessageAnalysis {
 
         return images.concat(videos)
     }
+}
 
 String.prototype.removeMarkdown = function() {
     return this
@@ -64,6 +68,12 @@ String.prototype.replaceEmojis = function() {
         return match
     })
 }
+
+String.prototype.replaceSpecialCharacter = function() {
+    return this
+        // @{英数字}はTwitterではリプライになるので、[@]に変換して無効化する。
+        // 全角＠でもリプライになってしまう・・・
+        .replace(/@/g, "[@]");
 }
 
 module.exports = ConcrntMessageAnalysis
