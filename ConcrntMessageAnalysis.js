@@ -27,43 +27,43 @@ class ConcrntMessageAnalysis {
         return images.concat(videos)
     }
 
-    removeMarkdown(markdown) {
-        return markdown
-            // Remove HTML tags
-            .replace(/<\/?[^>]+(>|$)/g, "")
-            // Remove emphasis (bold, italic, strikethrough)
-            .replace(/(\*{1,2}|_{1,2}|~{2})(.*?)\1/g, "$2")
-            // Remove headers
-            .replace(/^(#{1,6})\s+(.*)/gm, "$2")
-            // Remove inline code
-            .replace(/`([^`]*)`/g, "$1")
-            // Remove code blocks
-            .replace(/```[\s\S]*?```/g, "")
-            // Remove images
-            .replace(/!\[.*?\]\(.*?\)/g, "")
-            // Remove links
-            .replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1")
-            // Remove horizontal rules
-            .replace(/^(-{3,}|_{3,}|\*{3,})$/gm, "")
-            // Remove unordered list items
-            .replace(/^\s*[-*+]\s+/gm, "")
-            // Remove ordered list items
-            .replace(/^\s*\d+\.\s+/gm, "")
-            // Remove extra spaces and newlines
-            .replace(/^\s+|\s+$/g, "")
-            .replace(/\n{2,}/g, "\n");
-    }
+String.prototype.removeMarkdown = function() {
+    return this
+        // Remove HTML tags
+        .replace(/<\/?[^>]+(>|$)/g, "")
+        // Remove emphasis (bold, italic, strikethrough)
+        .replace(/(\*{1,2}|_{1,2}|~{2})(.*?)\1/g, "$2")
+        // Remove headers
+        .replace(/^(#{1,6})\s+(.*)/gm, "$2")
+        // Remove inline code
+        .replace(/`([^`]*)`/g, "$1")
+        // Remove code blocks
+        .replace(/```[\s\S]*?```/g, "")
+        // Remove images
+        .replace(/!\[.*?\]\(.*?\)/g, "")
+        // Remove links
+        .replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1")
+        // Remove horizontal rules
+        .replace(/^(-{3,}|_{3,}|\*{3,})$/gm, "")
+        // Remove unordered list items
+        .replace(/^\s*[-*+]\s+/gm, "")
+        // Remove ordered list items
+        .replace(/^\s*\d+\.\s+/gm, "")
+        // Remove extra spaces and newlines
+        .replace(/^\s+|\s+$/g, "")
+        .replace(/\n{2,}/g, "\n");
+}
 
-    replaceEmojis(text, emojiMap) {
-        return text.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
-            for (const key in emojiMap) {
-                if (match.indexOf(key) > 0) {
-                    return emojiMap[key];
-                }
+String.prototype.replaceEmojis = function() {
+    return this.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
+        for (const key in emojiMap) {
+            if (match.indexOf(key) > 0) {
+                return emojiMap[key];
             }
-            return match
-        })
-    }
+        }
+        return match
+    })
+}
 }
 
 module.exports = ConcrntMessageAnalysis
