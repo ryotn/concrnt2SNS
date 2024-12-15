@@ -55,14 +55,22 @@ String.prototype.removeMarkdown = function() {
         .replace(/^\s*\d+\.\s+/gm, "")
         // Remove extra spaces and newlines
         .replace(/^\s+|\s+$/g, "")
-        .replace(/\n{2,}/g, "\n");
+        .replace(/\n{2,}/g, "\n")
 }
 
 String.prototype.replaceEmojis = function() {
     return this.replace(/:([a-zA-Z0-9_]+):/g, (match, p1) => {
+        //完全一致
         for (const key in emojiMap) {
+            if (key === match.replace(/:/g, "")) {
+                return emojiMap[key]
+            }
+        }
+        //部分一致
+        for (const key in emojiMap) {
+            if (key.length <= 3) continue
             if (match.indexOf(key) > 0) {
-                return emojiMap[key];
+                return emojiMap[key]
             }
         }
         return match
@@ -73,7 +81,7 @@ String.prototype.replaceSpecialCharacter = function() {
     return this
         // @{英数字}はTwitterではリプライになるので、[@]に変換して無効化する。
         // 全角＠でもリプライになってしまう・・・
-        .replace(/@/g, "[@]");
+        .replace(/@/g, "[@]")
 }
 
 module.exports = ConcrntMessageAnalysis
