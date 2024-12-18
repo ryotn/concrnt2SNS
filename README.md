@@ -20,7 +20,7 @@ BS_SERVICE="BlueskyのサーバーURL https://bsky.social　とか"
 CC_SUBKEY="コンカレのサブキー"
 LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定"
 
-// Option
+// Option（使わない場合は入れないこと）
 TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
 ```
 4. `npm start`で多分動く！！
@@ -28,3 +28,10 @@ TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHoo
 ## その他
 pm2とかでデーモン化するといいかも  
 https://pm2.keymetrics.io/  
+
+## TW_WEBHOOK_URLについて
+Twitterの無料APIの制限がキツイので、メディアなしのTweetをIFTTT経由で行えるようにしました。  
+IFTTTでこいういうAppletを作ってWebHookのURLをTW_WEBHOOK_URLにセットしてください。  
+![image](https://github.com/user-attachments/assets/6350bd08-b941-4108-8b13-fda947bdd655)
+![image](https://github.com/user-attachments/assets/3c4b34ca-4412-458a-9342-d0b537f7cc6e)
+
