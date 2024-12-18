@@ -19,9 +19,12 @@ BS_APP_PASSWORD="BlueskyのAPP_PASSWORD"
 BS_SERVICE="BlueskyのサーバーURL https://bsky.social　とか"
 CC_SUBKEY="コンカレのサブキー"
 LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定"
+
+// Option
+TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
 ```
 4. `npm start`で多分動く！！
 
 ## その他
-foreverとかでデーモン化するといいかも  
-https://www.npmjs.com/package/forever
+pm2とかでデーモン化するといいかも  
+https://pm2.keymetrics.io/  
