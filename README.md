@@ -22,6 +22,7 @@ LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合は
 
 // Option（使わない場合は入れないこと）
 TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
+TW_WEBHOOK_IMAGE_URL="1枚だけ画像ありのTweetをIFTTT経由で行う場合のWebHookURL"
 ```
 4. `npm start`で多分動く！！
 
@@ -29,9 +30,16 @@ TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHoo
 pm2とかでデーモン化するといいかも  
 https://pm2.keymetrics.io/  
 
-## TW_WEBHOOK_URLについて
+## `TW_WEBHOOK_URL`や`TW_WEBHOOK_IMAGE_URL`について
 Twitterの無料APIの制限がキツイので、メディアなしのTweetをIFTTT経由で行えるようにしました。  
-IFTTTでこいういうAppletを作ってWebHookのURLをTW_WEBHOOK_URLにセットしてください。  
+IFTTTでこいういうAppletを作ってWebHookのURLを`TW_WEBHOOK_URL`と`TW_WEBHOOK_IMAGE_URL`にセットしてください。  
+※IFTTT Pro以上必須です。  
+### メディアなしのTweet用 (TW_WEBHOOK_URL)
 ![image](https://github.com/user-attachments/assets/6350bd08-b941-4108-8b13-fda947bdd655)
 ![image](https://github.com/user-attachments/assets/3c4b34ca-4412-458a-9342-d0b537f7cc6e)
+
+### 1枚だけ画像ありのTweet用 (TW_WEBHOOK_IMAGE_URL)
+![image](https://github.com/user-attachments/assets/6271c892-2db6-4bf5-8c17-f7f7bb56e33c)
+![image](https://github.com/user-attachments/assets/27ed9a51-d20b-4786-b3ac-5354b4aa76c7)
+
 
