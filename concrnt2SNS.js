@@ -9,9 +9,9 @@ const CC_SUBKEY = process.env.CC_SUBKEY
 const TW_ENABLE = process.env.TW_ENABLE == "true"
 const TW_API_KEY = process.env.TW_API_KEY
 const TW_API_KEY_SECRET = process.env.TW_API_KEY_SECRET
-
 const TW_ACCESS_TOKEN = process.env.TW_ACCESS_TOKEN
 const TW_ACCESS_TOKEN_SECRET = process.env.TW_ACCESS_TOKEN_SECRET
+const TW_WEBHOOK_URL = process.env.TW_WEBHOOK_URL
 
 const BS_ENABLE = process.env.BS_ENABLE == "true"
 const BS_IDENTIFIER = process.env.BS_IDENTIFIER
@@ -21,7 +21,7 @@ const BS_SERVICE = process.env.BS_SERVICE
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
 const image = new ImageResize()
-const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET)
+const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL)
 const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
