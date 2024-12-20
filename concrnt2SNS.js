@@ -1,8 +1,8 @@
-const cc = require('@concurrent-world/client')
-const ImageResize = require('./Image.js')
-const Twitter = require('./Twitter.js')
-const AtProtocol = require('./AtProtocol.js')
-const CCMsgAnalysis = require('./ConcrntMessageAnalysis.js')
+import { Client } from '@concurrent-world/client'
+import ImageResize from './Image.js'
+import Twitter from './Twitter.js'
+import AtProtocol from './AtProtocol.js'
+import CCMsgAnalysis from './ConcrntMessageAnalysis.js'
 
 const CC_SUBKEY = process.env.CC_SUBKEY
 
@@ -27,7 +27,7 @@ const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
-    const client = await cc.Client.createFromSubkey(CC_SUBKEY)
+    const client = await Client.createFromSubkey(CC_SUBKEY)
 
     const subscription = await client.newSubscription()
     const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline

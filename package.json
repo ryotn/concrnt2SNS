@@ -1,7 +1,9 @@
 {
   "scripts": {
-    "start": "node --env-file=.env concrnt2SNS.js"
+    "start": "node --env-file=.env concrnt2SNS.js",
+    "test": "node --env-file=.env test.js"
   },
+  "type": "module",
   "dependencies": {
     "@atproto/api": "^0.12.29",
     "@concurrent-world/client": "^6.0.24",

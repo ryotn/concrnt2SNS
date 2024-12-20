@@ -1,11 +1,11 @@
-const at = require('@atproto/api')
-const axios = require('axios')
+import { BskyAgent, RichText } from '@atproto/api'
+import axios from 'axios'
 
 class AtProtocol {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
     constructor(service, Identifier, appPassword) {
-        this.agent = new at.BskyAgent({
+        this.agent = new BskyAgent({
             service: service
         })
 
@@ -30,7 +30,7 @@ class AtProtocol {
 
     async post(text, filesBuffer) {
         const medias = await this.uploadMedia(filesBuffer)
-        const rt = new at.RichText({
+        const rt = new RichText({
             text: text
         })
         await rt.detectFacets(this.agent)
@@ -215,4 +215,4 @@ class AtProtocol {
 
 }
 
-module.exports = AtProtocol
+export default AtProtocol

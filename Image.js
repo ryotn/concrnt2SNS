@@ -1,5 +1,5 @@
 
-const sharp = require('sharp')
+import sharp from 'sharp'
 
 class Image {
     async downloader(files) {
@@ -59,4 +59,4 @@ class Image {
     }
 }
 
-module.exports = Image
+export default Image
