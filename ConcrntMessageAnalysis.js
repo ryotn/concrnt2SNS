@@ -69,7 +69,7 @@ String.prototype.replaceEmojis = function() {
         }
         //部分一致
         for (const key in emojiMap) {
-            if (key.length <= 3) continue
+            if (key.length <= 2) continue
             if (match.indexOf(key) > 0) {
                 return emojiMap[key]
             }
