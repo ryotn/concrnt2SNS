@@ -1,7 +1,7 @@
 
 import sharp from 'sharp'
 
-class Image {
+class Media {
     async downloader(files) {
         const filesImage = files.filter((file) => file.type.indexOf("image") >= 0)
         const filesVideo = files.filter((file) => file.type.indexOf("video") >= 0)
@@ -59,4 +59,4 @@ class Image {
     }
 }
 
-export default Image
+export default Media

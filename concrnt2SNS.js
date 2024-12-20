@@ -1,5 +1,5 @@
 import { Client } from '@concurrent-world/client'
-import ImageResize from './Image.js'
+import Media from './Media.js'
 import Twitter from './Twitter.js'
 import AtProtocol from './AtProtocol.js'
 import CCMsgAnalysis from './ConcrntMessageAnalysis.js'
@@ -21,7 +21,7 @@ const BS_SERVICE = process.env.BS_SERVICE
 
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
-const image = new ImageResize()
+const media = new Media()
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
 const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const ccMsgAnalysis = new CCMsgAnalysis()
@@ -56,7 +56,7 @@ function receivedPost(data) {
         })
 
         if (text.length > 0 || files.length > 0) {
-            image.downloader(files).then(filesBuffer => {
+            media.downloader(files).then(filesBuffer => {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
                 if (BS_ENABLE) bskyClient.post(text, filesBuffer)
             })
