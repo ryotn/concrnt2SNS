@@ -23,7 +23,7 @@ const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
 const media = new Media()
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
-const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
+const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {

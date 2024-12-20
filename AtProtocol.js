@@ -4,28 +4,37 @@ import axios from 'axios'
 class AtProtocol {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(service, Identifier, appPassword) {
-        this.agent = new BskyAgent({
+    constructor() {
+        this.agent = undefined
+        this.aud = undefined
+    }
+
+    static async build(service, Identifier, appPassword) {
+        const atProtocol = new AtProtocol()
+
+        atProtocol.agent = new BskyAgent({
             service: service
         })
 
-        this.agent.login({
+        const loginResult = await atProtocol.agent.login({
             identifier: Identifier,
             password: appPassword
-        }).then(res => {
-            console.log(`BS Login : ${res}`)
-            // audの取得
-            // あんまりイケてないカモ・・・
-            const jwt = res.data.accessJwt.split(".").map((jwt) => {
-                try {
-                    return JSON.parse(atob(jwt))
-                } catch (e) {
-                    return {}
-                }
-            })
-
-            this.aud = jwt[1].aud
         })
+
+        console.log(`BS Login : ${loginResult}`)
+        // audの取得
+        // あんまりイケてないカモ・・・
+        const jwt = loginResult.data.accessJwt.split(".").map((jwt) => {
+            try {
+                return JSON.parse(atob(jwt))
+            } catch (e) {
+                return {}
+            }
+        })
+
+        atProtocol.aud = jwt[1].aud
+
+        return atProtocol
     }
 
     async post(text, filesBuffer) {
