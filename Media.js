@@ -1,4 +1,3 @@
-
 import sharp from 'sharp'
 
 class Media {
