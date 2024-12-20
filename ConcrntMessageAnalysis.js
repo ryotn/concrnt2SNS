@@ -1,6 +1,7 @@
 
 import { readFile } from 'fs/promises'
-const emojiMap = JSON.parse(await readFile('./emojiMap.json'))
+const workDir = process.cwd()
+const emojiMap = JSON.parse(await readFile(`${workDir}/emojiMap.json`))
 const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
 const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
 const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
