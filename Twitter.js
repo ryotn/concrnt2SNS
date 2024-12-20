@@ -1,9 +1,9 @@
-const twV2 = require('twitter-api-v2')
-const axios = require('axios')
+import { TwitterApi } from 'twitter-api-v2'
+import axios from 'axios'
 
 class Twitter {
     constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage) {
-        this.twitterClient = new twV2.TwitterApi({
+        this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
             accessToken: token,
@@ -74,4 +74,4 @@ class Twitter {
     }
 }
 
-module.exports = Twitter
+export default Twitter

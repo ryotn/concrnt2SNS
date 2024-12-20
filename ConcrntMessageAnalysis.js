@@ -1,5 +1,7 @@
 
-const emojiMap = require('./emojiMap.json')
+import { readFile } from 'fs/promises'
+const workDir = process.cwd()
+const emojiMap = JSON.parse(await readFile(`${workDir}/emojiMap.json`))
 const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
 const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
 const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
@@ -68,7 +70,7 @@ String.prototype.replaceEmojis = function() {
         }
         //部分一致
         for (const key in emojiMap) {
-            if (key.length <= 3) continue
+            if (key.length <= 2) continue
             if (match.indexOf(key) > 0) {
                 return emojiMap[key]
             }
@@ -84,4 +86,4 @@ String.prototype.replaceSpecialCharacter = function() {
         .replace(/@/g, "[@]")
 }
 
-module.exports = ConcrntMessageAnalysis
+export default ConcrntMessageAnalysis

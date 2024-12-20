@@ -1511,7 +1511,6 @@
     "abcd": "🔡",
     "symbols": "🔣",
     "abc": "🔤",
-    "a": "🅰️",
     "ab": "🆎",
     "b": "🅱️",
     "cl": "🆑",
@@ -1923,7 +1922,7 @@
     "tokeru": "🫠",
     "shock": "😧",
     "resonyance": "🙀",
-    "nemusugiru2": "眠すぎる───",
+    "nemusugiru": "眠すぎる",
     "polar": "😮",
     "oyasumi": "おやすみ",
     "dareyosononna": "誰よその女！",
@@ -1942,5 +1941,15 @@
     "11degozaimasu": "11月1日でございます",
     "12degozaimasu": "12月1日でございます",
     "ifilter_misetehoshii": "見せてほしい",
-    "kokoa_waiwai": "😆"
+    "kokoa_waiwai": "😆",
+    "nanikore": "ナニコレ",
+    "gyaa": "ｷﾞｬｰ!",
+    "nazo": "謎",
+    "aruaru": "あるある",
+    "kita": "ｷﾀ",
+    "ultrafastpolar": "😮",
+    "samusugiru": "寒すぎる",
+    "atsusugiru": "暑すぎる",
+    "atsui": "暑い",
+    "a": "ア！"
 }
