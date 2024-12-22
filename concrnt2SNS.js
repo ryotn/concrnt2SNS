@@ -1,8 +1,8 @@
-const cc = require('@concurrent-world/client')
-const ImageResize = require('./Image.js')
-const Twitter = require('./Twitter.js')
-const AtProtocol = require('./AtProtocol.js')
-const CCMsgAnalysis = require('./ConcrntMessageAnalysis.js')
+import { Client } from '@concurrent-world/client'
+import Media from './Media.js'
+import Twitter from './Twitter.js'
+import AtProtocol from './AtProtocol.js'
+import CCMsgAnalysis from './ConcrntMessageAnalysis.js'
 
 const CC_SUBKEY = process.env.CC_SUBKEY
 
@@ -21,13 +21,13 @@ const BS_SERVICE = process.env.BS_SERVICE
 
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
-const image = new ImageResize()
+const media = new Media()
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
-const bskyClient = BS_ENABLE && new AtProtocol(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
+const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
-    const client = await cc.Client.createFromSubkey(CC_SUBKEY)
+    const client = await Client.createFromSubkey(CC_SUBKEY)
 
     const subscription = await client.newSubscription()
     const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline
@@ -56,7 +56,7 @@ function receivedPost(data) {
         })
 
         if (text.length > 0 || files.length > 0) {
-            image.downloader(files).then(filesBuffer => {
+            media.downloader(files).then(filesBuffer => {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
                 if (BS_ENABLE) bskyClient.post(text, filesBuffer)
             })

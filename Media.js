@@ -1,7 +1,6 @@
+import sharp from 'sharp'
 
-const sharp = require('sharp')
-
-class Image {
+class Media {
     async downloader(files) {
         const filesImage = files.filter((file) => file.type.indexOf("image") >= 0)
         const filesVideo = files.filter((file) => file.type.indexOf("video") >= 0)
@@ -59,4 +58,4 @@ class Image {
     }
 }
 
-module.exports = Image
+export default Media
