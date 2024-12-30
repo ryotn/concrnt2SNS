@@ -14,6 +14,10 @@ class ConcrntMessageAnalysis {
             .replaceSpecialCharacter()
     }
 
+    getURLs(body) {
+        return body.match(CC_URL_PATTERN) ?? []
+    }
+
     getMediaFiles(body) {
         const images = body.match(CC_IMG_PATTERN)?.map((url) => {
             return {
