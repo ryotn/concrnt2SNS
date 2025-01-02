@@ -2,6 +2,8 @@ import { BskyAgent, RichText } from '@atproto/api'
 import OgImage from './OgImage.js'
 import axios from 'axios'
 
+const MAX_MEDIA_UPLOAD_RETRYS = 3
+
 class AtProtocol {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
@@ -63,7 +65,33 @@ class AtProtocol {
             }
         }
 
-        await this.agent.post(record)
+        try {
+            await this.agent.post(record)
+        } catch (error) {
+            console.error('AtProtocol:Failed to post')
+            console.error(error)
+        }
+    }
+
+    async uploadBlob(data, type) {
+        let retryCount = 0
+        while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+            try {
+                return await this.agent.uploadBlob(
+                    data,
+                    {
+                        encoding: type,
+                    }
+                )
+            } catch (error) {
+                retryCount++
+                console.error(`Retry uploadBlob. retryCount:${retryCount}`)
+                console.error(error)
+                await this.sleep(1000)
+            }
+        }
+
+        throw new Error("Failed to upload media.")
     }
 
     async uploadOgImage(ogImage) {
@@ -74,20 +102,19 @@ class AtProtocol {
         }
 
         if (ogImage.uint8Array.length > 0) {
-            console.log(ogImage.uint8Array)
-            const uploadedImage = await this.agent.uploadBlob(
-                ogImage.uint8Array,
-                {
-                    encoding: ogImage.type,
+            // Retryしてもアップロードできない場合は諦める
+            try {
+                const uploadedImage = await this.uploadBlob(ogImage.uint8Array, ogImage.type)
+                external.thumb = {
+                    $type: "blob",
+                    ref: {
+                        $link: uploadedImage.data.blob.ref.toString(),
+                    },
+                    mimeType: uploadedImage.data.blob.mimeType,
+                    size: uploadedImage.data.blob.size,
                 }
-            )
-            external.thumb = {
-                $type: "blob",
-                ref: {
-                    $link: uploadedImage.data.blob.ref.toString(),
-                },
-                mimeType: uploadedImage.data.blob.mimeType,
-                size: uploadedImage.data.blob.size,
+            } catch (error) {
+                console.error(error)
             }
         }
 
@@ -122,23 +149,25 @@ class AtProtocol {
             }
         }
 
-        const images = await Promise.all(filesBuffer.filter((file) => file.type.indexOf("image") >= 0).map(async (file) => {
-            const result = await this.agent.uploadBlob(
-                file.uint8Array,
-                {
-                    encoding: file.type,
+        let images = await Promise.all(filesBuffer.filter((file) => file.type.indexOf("image") >= 0).map(async (file) => {
+            try {
+                const result = await this.uploadBlob(file.uint8Array, file.type)
+                return {
+                    alt: "",
+                    image: result.data.blob,
+                    aspectRatio: {
+                        width: 3,
+                        height: 2
+                    }
                 }
-            )
-
-            return {
-                alt: "",
-                image: result.data.blob,
-                aspectRatio: {
-                    width: 3,
-                    height: 2
-                }
+            } catch (error) {
+                // Retryしてもアップロードできない場合は諦める
+                console.error(error)
+                return undefined
             }
         }))
+
+        images = images.filter(v => v) //空要素を除外
 
         if (images.length > 0) {
             return {
