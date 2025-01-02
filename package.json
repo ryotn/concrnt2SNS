@@ -8,6 +8,7 @@
     "@atproto/api": "^0.12.29",
     "@concurrent-world/client": "^6.0.24",
     "axios": "^1.7.7",
+    "open-graph-scraper": "^6.8.3",
     "sharp": "^0.33.4",
     "twitter-api-v2": "^1.17.1"
   }

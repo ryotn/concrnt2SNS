@@ -46,6 +46,7 @@ function receivedPost(data) {
     if (data.document.schema == "https://schema.concrnt.world/m/markdown.json" || data.document.schema == "https://schema.concrnt.world/m/media.json") {
         const body = data.document.body.body
         const text = ccMsgAnalysis.getPlaneText(body)
+        const urls = ccMsgAnalysis.getURLs(text)
         const files = ccMsgAnalysis.getMediaFiles(body)
 
         data.document.body.medias?.forEach(media => {
@@ -58,7 +59,7 @@ function receivedPost(data) {
         if (text.length > 0 || files.length > 0) {
             media.downloader(files).then(filesBuffer => {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
-                if (BS_ENABLE) bskyClient.post(text, filesBuffer)
+                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer)
             })
         }
     }

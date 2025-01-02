@@ -1,4 +1,5 @@
 import { BskyAgent, RichText } from '@atproto/api'
+import OgImage from './OgImage.js'
 import axios from 'axios'
 
 class AtProtocol {
@@ -37,28 +38,63 @@ class AtProtocol {
         return atProtocol
     }
 
-    async post(text, filesBuffer) {
+    async post(text, urls, filesBuffer) {
         const medias = await this.uploadMedia(filesBuffer)
+        const ogImage = await OgImage.getOgImage(urls?.at(0))
         const rt = new RichText({
             text: text
         })
         await rt.detectFacets(this.agent)
 
-        let record = {
+        const record = {
             text: rt.text,
             facets: rt.facets,
-            embed: {
-                $type: 'app.bsky.feed.post',
-            },
             createdAt: new Date().toISOString(),
             langs: ["ja"],
         }
 
         if (medias != undefined) {
             record.embed = medias
+        } else if (ogImage != undefined) {
+            record.embed = await this.uploadOgImage(ogImage)
+        } else {
+            record.embed = {
+                $type: 'app.bsky.feed.post'
+            }
         }
 
         await this.agent.post(record)
+    }
+
+    async uploadOgImage(ogImage) {
+        const external = {
+            uri: ogImage.url,
+            title: ogImage.title,
+            description: ogImage.description,
+        }
+
+        if (ogImage.uint8Array.length > 0) {
+            console.log(ogImage.uint8Array)
+            const uploadedImage = await this.agent.uploadBlob(
+                ogImage.uint8Array,
+                {
+                    encoding: ogImage.type,
+                }
+            )
+            external.thumb = {
+                $type: "blob",
+                ref: {
+                    $link: uploadedImage.data.blob.ref.toString(),
+                },
+                mimeType: uploadedImage.data.blob.mimeType,
+                size: uploadedImage.data.blob.size,
+            }
+        }
+
+        return {
+            $type: "app.bsky.embed.external",
+            external: external
+        }
     }
 
     async uploadMedia(filesBuffer) {
