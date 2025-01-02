@@ -40,7 +40,7 @@ class AtProtocol {
 
     async post(text, urls, filesBuffer) {
         const medias = await this.uploadMedia(filesBuffer)
-        const ogImage = await OgImage.getOgImage(urls?.at(0))
+        const ogImage = (urls?.at(0)) ? await OgImage.getOgImage(urls?.at(0)) : undefined
         const rt = new RichText({
             text: text
         })

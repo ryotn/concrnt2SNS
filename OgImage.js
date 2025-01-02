@@ -3,28 +3,29 @@ import sharp from "sharp";
 
 class OgImage {
   static async getOgImage(url) {
-    if (url == undefined) {
+    try {
+      const { result } = await ogs({ url: url })
+      const ogImageUrl = result.ogImage?.at(0)?.url
+      const ogImage = await this.getImage(ogImageUrl)
+      const title = result.ogTitle || ""
+      const description = result.ogDescription || ""
+
+      return {
+        imageUrl: ogImageUrl,
+        type: "image/jpeg",
+        url: url,
+        description: description,
+        title: title,
+        uint8Array: new Uint8Array(ogImage),
+      }
+    } catch (e) {
+      console.error(e)
       return undefined
-    }
-
-    const { result } = await ogs({ url: url })
-    const ogImageUrl = result.ogImage?.at(0)?.url
-    const ogImage = await this.getImage(ogImageUrl)
-    const title = result.ogTitle || ""
-    const description = result.ogDescription || ""
-
-    return {
-      imageUrl: ogImageUrl,
-      type: "image/jpeg",
-      url: url,
-      description: description,
-      title: title,
-      uint8Array: new Uint8Array(ogImage),
     }
   }
 
   static async getImage(ogImageUrl) {
-    if (ogImageUrl != undefined) {
+    try {
       const res = await fetch(ogImageUrl)
       const buffer = await res.arrayBuffer()
 
@@ -38,8 +39,9 @@ class OgImage {
           progressive: true,
         })
         .toBuffer()
-    } else {
-      return Buffer.from("")
+    } catch (e) {
+      console.error(e)
+      return undefined
     }
   }
 }
