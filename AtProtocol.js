@@ -2,6 +2,8 @@ import { BskyAgent, RichText } from '@atproto/api'
 import OgImage from './OgImage.js'
 import axios from 'axios'
 
+const MAX_MEDIA_UPLOAD_RETRYS = 3
+
 class AtProtocol {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
@@ -63,7 +65,33 @@ class AtProtocol {
             }
         }
 
-        await this.agent.post(record)
+        try {
+            await this.agent.post(record)
+        } catch (error) {
+            console.error('AtProtocol:Failed to post')
+            console.error(error)
+        }
+    }
+
+    async uploadBlob(data, type) {
+        let retryCount = 0
+        while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+            try {
+                return await this.agent.uploadBlob(
+                    data,
+                    {
+                        encoding: type,
+                    }
+                )
+            } catch (error) {
+                retryCount++
+                console.error(`Retry uploadBlob. retryCount:${retryCount}`)
+                console.error(error)
+                await this.sleep(1000)
+            }
+        }
+
+        throw new Error("Failed to upload media.")
     }
 
     async uploadOgImage(ogImage) {
@@ -74,20 +102,19 @@ class AtProtocol {
         }
 
         if (ogImage.uint8Array.length > 0) {
-            console.log(ogImage.uint8Array)
-            const uploadedImage = await this.agent.uploadBlob(
-                ogImage.uint8Array,
-                {
-                    encoding: ogImage.type,
+            // Retryしてもアップロードできない場合は諦める
+            try {
+                const uploadedImage = await this.uploadBlob(ogImage.uint8Array, ogImage.type)
+                external.thumb = {
+                    $type: "blob",
+                    ref: {
+                        $link: uploadedImage.data.blob.ref.toString(),
+                    },
+                    mimeType: uploadedImage.data.blob.mimeType,
+                    size: uploadedImage.data.blob.size,
                 }
-            )
-            external.thumb = {
-                $type: "blob",
-                ref: {
-                    $link: uploadedImage.data.blob.ref.toString(),
-                },
-                mimeType: uploadedImage.data.blob.mimeType,
-                size: uploadedImage.data.blob.size,
+            } catch (error) {
+                console.error(error)
             }
         }
 
@@ -101,44 +128,56 @@ class AtProtocol {
         //Blueskyは動画1つだけ、かつ1ファイル50MBまでアップできる
         const video = filesBuffer.filter((file) => file.type.indexOf("video") >= 0).shift()
         if (video != undefined) {
-            const videoUploadResult = await this.uploadVideo(video.uint8Array)
-            const jobId = videoUploadResult.jobId
-            if (jobId) {
-                while (true) {
-                    const jobStatus = await this.getVideoJobStatus(jobId)
-                    console.log(jobStatus)
-                    if (jobStatus.jobStatus.state == "JOB_STATE_COMPLETED") {
-                        return {
-                            $type: 'app.bsky.embed.video',
-                            video: jobStatus.jobStatus.blob
+            try {
+                let videoUploadResult = await this.uploadVideo(video.uint8Array)
+                let jobId = videoUploadResult.jobId
+                let retryCount = 0
+                if (jobId) {
+                    while (true) {
+                        const jobStatus = await this.getVideoJobStatus(jobId)
+                        console.log(jobStatus)
+                        if (jobStatus.jobStatus.state == "JOB_STATE_COMPLETED") {
+                            return {
+                                $type: 'app.bsky.embed.video',
+                                video: jobStatus.jobStatus.blob
+                            }
+                        } else if (jobStatus.jobStatus.state == "JOB_STATE_FAILED") {
+                            console.log("Video processing failed. Retrying...")
+                            retryCount++
+                            if (retryCount >= MAX_MEDIA_UPLOAD_RETRYS) {
+                                throw new Error("Video processing failed after 3 retries.")
+                            }
+                            videoUploadResult = await this.uploadVideo(video.uint8Array)
+                            jobId = videoUploadResult.jobId
                         }
-                    } else if (jobStatus.jobStatus.state == "JOB_STATE_FAILED") {
-                        console.log("Video processing failed.")
-                        break
-                    }
 
-                    await this.sleep(1000)
+                        await this.sleep(1000)
+                    }
                 }
+            } catch (error) {
+                console.error(error)
             }
         }
 
-        const images = await Promise.all(filesBuffer.filter((file) => file.type.indexOf("image") >= 0).map(async (file) => {
-            const result = await this.agent.uploadBlob(
-                file.uint8Array,
-                {
-                    encoding: file.type,
+        let images = await Promise.all(filesBuffer.filter((file) => file.type.indexOf("image") >= 0).map(async (file) => {
+            try {
+                const result = await this.uploadBlob(file.uint8Array, file.type)
+                return {
+                    alt: "",
+                    image: result.data.blob,
+                    aspectRatio: {
+                        width: 3,
+                        height: 2
+                    }
                 }
-            )
-
-            return {
-                alt: "",
-                image: result.data.blob,
-                aspectRatio: {
-                    width: 3,
-                    height: 2
-                }
+            } catch (error) {
+                // Retryしてもアップロードできない場合は諦める
+                console.error(error)
+                return undefined
             }
         }))
+
+        images = images.filter(v => v) //空要素を除外
 
         if (images.length > 0) {
             return {
@@ -200,36 +239,48 @@ class AtProtocol {
     }
 
     async uploadVideo(data) {
-        const authResult = await this.getServiceAuth(this.aud, 'com.atproto.repo.uploadBlob')
-        const token = authResult.token
+        let retryCount = 0
         const did = encodeURIComponent(this.agent.did)
         const name = encodeURIComponent(`${this.getFormatDate()}.mp4`)
 
-        let config = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: `https://video.bsky.app/xrpc/app.bsky.video.uploadVideo?did=${did}&name=${name}`,
-            headers: {
-                'Content-Type': 'video/mp4',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            data: data
-        }
+        while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+            const authResult = await this.getServiceAuth(this.aud, 'com.atproto.repo.uploadBlob')
+            const token = authResult.token
 
-        try {
-            const res = await axios(config)
-            return res.data
-        } catch (error) {
-            const responseStatus = error.response.status
-            const responseData = error.response.data
-            if (responseStatus != 409) {
-                console.log(`Video upload failed. code:${responseStatus}`)
-                console.log(responseData)
+            let config = {
+                method: 'post',
+                maxBodyLength: Infinity,
+                url: `https://video.bsky.app/xrpc/app.bsky.video.uploadVideo?did=${did}&name=${name}`,
+                headers: {
+                    'Content-Type': 'video/mp4',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                data: data
             }
 
-            return responseData
+            try {
+                const res = await axios(config)
+                return res.data
+            } catch (error) {
+                const responseStatus = error.response?.status
+                const responseData = error.response?.data
+                if (responseStatus == 409) { //409は同じデータがアップロード済みで再利用できるのでリトライしない
+                    console.log(`Video upload failed. code:${responseStatus}`)
+                    console.log(responseData)
+                    return responseData
+                } else if (responseStatus == 400) { //400はファイルサイズが50MB以上か、60秒以上の動画の場合
+                    throw new Error(`Failed to upload video. ${responseData.error}`)
+                }
+
+                retryCount++
+                console.error(`Retry uploadVideo. retryCount:${retryCount}`)
+                console.error(error)
+                await this.sleep(1000)
+            }
         }
+
+        throw new Error("Failed to upload video.")
     }
 
     getFormatDate() {
