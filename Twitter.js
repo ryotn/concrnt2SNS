@@ -1,7 +1,11 @@
 import { TwitterApi } from 'twitter-api-v2'
 import axios from 'axios'
 
+const MAX_MEDIA_UPLOAD_RETRYS = 3
+
 class Twitter {
+    sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
+
     constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
@@ -15,40 +19,54 @@ class Twitter {
     }
 
     async tweet(text, filesBuffer) {
-        const mediaIds = await this.uploadMedia(filesBuffer)
-
-        if (mediaIds.length > 0) {
+        const payload = {
+            text: text
+        }
+        try {
             if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage) {
-                this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
-            } else {
-                await this.twitterClient.v2.tweet({
-                    text: text,
-                    media: { media_ids: mediaIds }
-                })
+                await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
+                return
+            } else if (filesBuffer.length > 0) {
+                const mediaIds = await this.uploadMedia(filesBuffer)
+                if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
+            } else if (this.webhookURL != undefined) {
+                await this.tweetAtWebHook(this.webhookURL, text)
+                return
             }
-        } else {
-            if (this.webhookURL != undefined) {
-                this.tweetAtWebHook(this.webhookURL, text)
-            } else {
-                await this.twitterClient.v2.tweet({
-                    text: text
-                })
-            }
+            
+            await this.twitterClient.v2.tweet(payload)
+        } catch (error) {
+            console.error(error)
         }
     }
 
     async uploadMedia(filesBuffer) {
-        return await Promise.all(filesBuffer.map(async (file) => {
+        const ids = await Promise.all(filesBuffer.map(async (file) => {
+            let retryCount = 0
+
             const buffer = file.buffer
             const type = file.type
-            let option = { mimeType: type }
+            const option = { mimeType: type }
             if (type == "video/mp4") {
                 option.longVideo = true
             }
-            const id = await this.twitterClient.v1.uploadMedia(buffer, option)
 
-            return id
+            while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+                try {
+                    const id = await this.twitterClient.v1.uploadMedia(buffer, option)
+                    return id
+                } catch (error) {
+                    retryCount++
+                    console.error(`Retry uploadMedia. retryCount:${retryCount}`)
+                    console.error(error)
+                    await this.sleep(1000)
+                }
+            }
+
+            return undefined
         }))
+
+        return ids.filter(v => v)
     }
 
     async tweetAtWebHook(url, text, imageURL = undefined) {
@@ -69,7 +87,8 @@ class Twitter {
             await axios(config)
         } catch (error) {
             const responseStatus = error.response.status
-            console.log(`Failed to tweet on WebHook. code:${responseStatus}`)
+            console.error(`Failed to tweet on WebHook. code:${responseStatus}`)
+            throw error
         }
     }
 }
