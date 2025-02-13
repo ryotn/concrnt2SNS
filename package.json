@@ -6,7 +6,8 @@
   "type": "module",
   "dependencies": {
     "@atproto/api": "^0.12.29",
-    "@concurrent-world/client": "^6.0.24",
+    "@concrnt/worldlib": "^0.1.1",
+    "@concrnt/client": "^0.0.15",
     "axios": "^1.7.7",
     "open-graph-scraper": "^6.8.3",
     "sharp": "^0.33.4",
