@@ -1,4 +1,4 @@
-import { Client } from '@concurrent-world/client'
+import { Client } from '@concrnt/worldlib'
 import Media from './Media.js'
 import Twitter from './Twitter.js'
 import AtProtocol from './AtProtocol.js'
@@ -29,27 +29,28 @@ const ccMsgAnalysis = new CCMsgAnalysis()
 async function start() {
     const client = await Client.createFromSubkey(CC_SUBKEY)
 
-    const subscription = await client.newSubscription()
+    const subscription = await client.newSocketListener()
     const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline
 
     subscription.on('MessageCreated', (message) => {
-        if (message.document.signer != client.ccid) {
+        const document = message.parsedDoc
+        if (document.signer != client.ccid) {
             return
         }
-        receivedPost(message)
+        receivedPost(document)
     })
 
     subscription.listen([listenTimeline])
 }
 
-function receivedPost(data) {
-    if (data.document.schema == "https://schema.concrnt.world/m/markdown.json" || data.document.schema == "https://schema.concrnt.world/m/media.json") {
-        const body = data.document.body.body
+function receivedPost(document) {
+    if (document.schema == "https://schema.concrnt.world/m/markdown.json" || document.schema == "https://schema.concrnt.world/m/media.json") {
+        const body = document.body.body
         const text = ccMsgAnalysis.getPlaneText(body)
         const urls = ccMsgAnalysis.getURLs(text)
         const files = ccMsgAnalysis.getMediaFiles(body)
 
-        data.document.body.medias?.forEach(media => {
+        document.body.medias?.forEach(media => {
             files.push({
                 url: media.mediaURL,
                 type: media.mediaType.split("/")[0]
