@@ -3,6 +3,7 @@ import Media from './Media.js'
 import Twitter from './Twitter.js'
 import AtProtocol from './AtProtocol.js'
 import Threads from './Threads.js'
+import Nostr from './Nostr.js'
 import CCMsgAnalysis from './ConcrntMessageAnalysis.js'
 
 const CC_SUBKEY = process.env.CC_SUBKEY
@@ -23,12 +24,17 @@ const BS_SERVICE = process.env.BS_SERVICE
 const THREADS_ENABLE = process.env.THREADS_ENABLE == "true"
 const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN
 
+const NOSTR_ENABLE = process.env.NOSTR_ENABLE == "true"
+const NOSTR_PRIVATE_KEY = process.env.NOSTR_PRIVATE_KEY
+const NOSTR_RELAYS = process.env.NOSTR_RELAYS
+
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
 const media = new Media()
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
 const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKEN)
+const nosterClient = NOSTR_ENABLE && new Nostr(NOSTR_RELAYS, NOSTR_PRIVATE_KEY)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
@@ -67,6 +73,7 @@ function receivedPost(document) {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
                 if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer)
                 if (THREADS_ENABLE) threadsClient.post(text, filesBuffer)
+                if (NOSTR_ENABLE) nosterClient.post(text, filesBuffer)
             })
         }
     }
