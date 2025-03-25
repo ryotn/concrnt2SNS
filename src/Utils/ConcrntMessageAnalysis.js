@@ -4,6 +4,9 @@ const workDir = process.cwd()
 const emojiMap = JSON.parse(await readFile(`${workDir}/src/Utils/emojiMap.json`))
 const CC_IMG_PATTERN = /\!\[[^\]]*]\([^\)]*\)/g
 const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
+const CC_DETAILS_PATTERN = /<details>[\s\S]*?<\/details>/g
+const CC_SUMMARY_PATTERN = /<summary>[\s\S]*?<\/summary>/g
+const CC_HTMLTAG_AND_RN_PATTERN = /<[^>]*>|\r?\n/g
 const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
 
 class ConcrntMessageAnalysis {
@@ -19,17 +22,29 @@ class ConcrntMessageAnalysis {
     }
 
     getMediaFiles(body) {
+        const medias = this.getMedias(body.replace(CC_DETAILS_PATTERN, ""))
+        const sensitiveMedias = body.match(CC_DETAILS_PATTERN)?.map((details) => {
+            return this.getMedias(details)
+        }).flat(Infinity) ?? []
+
+        return medias.concat(sensitiveMedias)
+    }
+
+    getMedias(body) {
+        const flag = body.match(CC_SUMMARY_PATTERN)?.[0]?.replace(CC_HTMLTAG_AND_RN_PATTERN, "") ?? undefined
         const images = body.match(CC_IMG_PATTERN)?.map((url) => {
             return {
                 url: url.match(CC_URL_PATTERN)?.[0] ?? "",
-                type: "image"
+                type: "image",
+                flag: flag
             }
         }) ?? []
 
         const videos = body.match(CC_VIDEO_PATTERN)?.map((url) => {
             return {
                 url: url.match(CC_URL_PATTERN)?.[0] ?? "",
-                type: "video"
+                type: "video",
+                flag: flag
             }
         }) ?? []
 
@@ -39,6 +54,8 @@ class ConcrntMessageAnalysis {
 
 String.prototype.removeMarkdown = function() {
     return this
+        // Remove summary block
+        .replace(CC_SUMMARY_PATTERN, "")
         // Remove HTML tags
         .replace(/<\/?[^>]+(>|$)/g, "")
         // Remove emphasis (bold, italic, strikethrough)

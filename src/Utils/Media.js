@@ -16,7 +16,8 @@ class Media {
                 "url": url,
                 "buffer": resize,
                 "uint8Array": dataArray,
-                "type": "image/jpeg"
+                "type": "image/jpeg",
+                "flag": file.flag
             }
         }))
 
@@ -31,7 +32,8 @@ class Media {
                 "url": url,
                 "buffer": buffer,
                 "uint8Array": dataArray,
-                "type": "video/mp4"
+                "type": "video/mp4",
+                "flag": file.flag
             }
         }))
 

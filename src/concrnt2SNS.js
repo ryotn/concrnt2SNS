@@ -64,7 +64,8 @@ function receivedPost(document) {
         document.body.medias?.forEach(media => {
             files.push({
                 url: media.mediaURL,
-                type: media.mediaType.split("/")[0]
+                type: media.mediaType.split("/")[0],
+                flag: media.flag
             })
         })
 
