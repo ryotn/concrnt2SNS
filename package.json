@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "start": "node --env-file=.env concrnt2SNS.js",
-    "test": "node --env-file=.env --inspect test.js"
+    "start": "node --env-file=.env ./src/concrnt2SNS.js",
+    "test": "node --env-file=.env --inspect ./src/test.js"
   },
   "type": "module",
   "dependencies": {

@@ -1,5 +1,5 @@
 import { BskyAgent, RichText } from '@atproto/api'
-import OgImage from './OgImage.js'
+import OgImage from '../Utils/OgImage.js'
 import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
