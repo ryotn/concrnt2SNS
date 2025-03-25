@@ -1,10 +1,10 @@
 import { Client } from '@concrnt/worldlib'
-import Media from './Media.js'
-import Twitter from './Twitter.js'
-import AtProtocol from './AtProtocol.js'
-import Threads from './Threads.js'
-import Nostr from './Nostr.js'
-import CCMsgAnalysis from './ConcrntMessageAnalysis.js'
+import Media from './Utils/Media.js'
+import Twitter from './Clients/Twitter.js'
+import AtProtocol from './Clients/AtProtocol.js'
+import Threads from './Clients/Threads.js'
+import Nostr from './Clients/Nostr.js'
+import CCMsgAnalysis from './Utils/ConcrntMessageAnalysis.js'
 
 const CC_SUBKEY = process.env.CC_SUBKEY
 
