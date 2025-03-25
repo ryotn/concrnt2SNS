@@ -3,6 +3,10 @@ import OgImage from '../Utils/OgImage.js'
 import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+// コンカレのラベルとBSのラベルの対応
+// hardが何を指すのか不明・・・とりあえずsexualにしておく
+// warnはgraphic-mediaにしておく （グロ・事故・戦争・災害等）とあるので微妙・・・
+const WARNING_LABEL = {'porn': 'porn', 'hard': 'sexual', 'nude': 'nudity', 'warn': 'graphic-media'}
 
 class AtProtocol {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
@@ -42,6 +46,8 @@ class AtProtocol {
 
     async post(text, urls, filesBuffer) {
         const medias = await this.uploadMedia(filesBuffer)
+        // 自由記入なので該当するものがない場合はwarnにしておく
+        const flags = medias.flags.filter(v => v).map((flag) => WARNING_LABEL[flag] ?? WARNING_LABEL['warn'])
         const ogImage = (urls?.at(0)) ? await OgImage.getOgImage(urls?.at(0)) : undefined
         const rt = new RichText({
             text: text
@@ -56,12 +62,22 @@ class AtProtocol {
         }
 
         if (medias != undefined) {
-            record.embed = medias
+            record.embed = medias.embed
         } else if (ogImage != undefined) {
             record.embed = await this.uploadOgImage(ogImage)
         } else {
             record.embed = {
                 $type: 'app.bsky.feed.post'
+            }
+        }
+
+        if (flags.length > 0) {
+            const values = flags.map((flag) => {
+                return { val: flag }
+            })
+            record.labels = {
+                $type: 'com.atproto.label.defs#selfLabels',
+                values: values
             }
         }
 
@@ -138,8 +154,11 @@ class AtProtocol {
                         console.log(jobStatus)
                         if (jobStatus.jobStatus.state == "JOB_STATE_COMPLETED") {
                             return {
-                                $type: 'app.bsky.embed.video',
-                                video: jobStatus.jobStatus.blob
+                                embed: {
+                                    $type: 'app.bsky.embed.video',
+                                    video: jobStatus.jobStatus.blob
+                                },
+                                flags: [video.flag]
                             }
                         } else if (jobStatus.jobStatus.state == "JOB_STATE_FAILED") {
                             console.log("Video processing failed. Retrying...")
@@ -163,12 +182,15 @@ class AtProtocol {
             try {
                 const result = await this.uploadBlob(file.uint8Array, file.type)
                 return {
-                    alt: "",
-                    image: result.data.blob,
-                    aspectRatio: {
-                        width: 3,
-                        height: 2
-                    }
+                    image: {
+                        alt: "",
+                        image: result.data.blob,
+                        aspectRatio: {
+                            width: 3,
+                            height: 2
+                        }
+                    },
+                    flag: file.flag
                 }
             } catch (error) {
                 // Retryしてもアップロードできない場合は諦める
@@ -181,8 +203,11 @@ class AtProtocol {
 
         if (images.length > 0) {
             return {
-                $type: 'app.bsky.embed.images',
-                images: images
+                embed: {
+                    $type: 'app.bsky.embed.images',
+                    images: images.map((image) => image.image)
+                },
+                flags: images.map((image) => image.flag)
             }
         } else {
             return undefined
