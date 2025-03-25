@@ -2,6 +2,10 @@ import { TwitterApi } from 'twitter-api-v2'
 import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+// コンカレのラベルとTwitterのラベルの対応
+// hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
+// warnはotherにしておく
+const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nude': 'adult_content', 'warn': 'other' }
 
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
@@ -22,11 +26,12 @@ class Twitter {
         const payload = {
             text: text
         }
+        const isMediaFlag = filesBuffer.some(item => item.flag !== undefined)
         try {
-            if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage) {
+            if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
                 await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
                 return
-            } else if (filesBuffer.length > 0) {
+            } else if (filesBuffer.length > 0 || isMediaFlag) {
                 const mediaIds = await this.uploadMedia(filesBuffer)
                 if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
             } else if (this.webhookURL != undefined) {
@@ -54,6 +59,9 @@ class Twitter {
             while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
                 try {
                     const id = await this.twitterClient.v1.uploadMedia(buffer, option)
+                    if (file.flag) {
+                        await this.twitterClient.v1.createMediaMetadata(id, { sensitive_media_warning: [WARNING_LABEL[file.flag] ?? WARNING_LABEL["warn"]] })
+                    }
                     return id
                 } catch (error) {
                     retryCount++
