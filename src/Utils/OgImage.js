@@ -1,11 +1,13 @@
 import ogs from "open-graph-scraper";
 import sharp from "sharp";
 
+const GOOGLE_FAVICON_URL = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url="
+
 class OgImage {
   static async getOgImage(url) {
     try {
       const { result } = await ogs({ url: url })
-      const ogImageUrl = result.ogImage?.at(0)?.url
+      const ogImageUrl = result.ogImage?.at(0)?.url ?? GOOGLE_FAVICON_URL + url
       const ogImage = await this.getImage(ogImageUrl)
       const title = result.ogTitle || ""
       const description = result.ogDescription || ""
