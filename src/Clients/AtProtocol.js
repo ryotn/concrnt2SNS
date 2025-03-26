@@ -47,7 +47,7 @@ class AtProtocol {
     async post(text, urls, filesBuffer) {
         const medias = await this.uploadMedia(filesBuffer)
         // 自由記入なので該当するものがない場合はwarnにしておく
-        const flags = medias.flags.filter(v => v).map((flag) => WARNING_LABEL[flag] ?? WARNING_LABEL['warn'])
+        const flags = medias?.flags.filter(v => v).map((flag) => WARNING_LABEL[flag] ?? WARNING_LABEL['warn']) ?? []
         const ogImage = (urls?.at(0)) ? await OgImage.getOgImage(urls?.at(0)) : undefined
         const rt = new RichText({
             text: text
