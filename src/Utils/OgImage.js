@@ -1,16 +1,14 @@
 import ogs from "open-graph-scraper";
 import sharp from "sharp";
+import axios from 'axios';
 
 const GOOGLE_FAVICON_URL = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url="
 
 class OgImage {
-  static async getOgImage(url) {
+  static async getOgImage(url, ccClient = undefined) {
     try {
-      const { result } = await ogs({ url: url })
-      const ogImageUrl = result.ogImage?.at(0)?.url ?? GOOGLE_FAVICON_URL + url
+      const { ogImageUrl, title, description } = await this.getOgp(url, ccClient)
       const ogImage = await this.getImage(ogImageUrl)
-      const title = result.ogTitle || ""
-      const description = result.ogDescription || ""
 
       return {
         imageUrl: ogImageUrl,
@@ -44,6 +42,36 @@ class OgImage {
     } catch (e) {
       console.error(e)
       return undefined
+    }
+  }
+
+  static async getOgp(url, ccClient = undefined) {
+    let ogImageUrl = ""
+    let title = ""
+    let description = ""
+    if ("world.concrnt.hyperproxy.summary" in ccClient?.domainServices) {
+      const summaryUrl = `https://${ccClient.host}${ccClient.domainServices['world.concrnt.hyperproxy.summary'].path}?url=${encodeURIComponent(url)}`
+      try {
+        const { data } = await axios.get(summaryUrl)
+        ogImageUrl = data.icon.endsWith(".ico") ? GOOGLE_FAVICON_URL + url : data.icon
+        title = data.title
+        description = data.description
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    
+    if (!ogImageUrl) {
+      const { result } = await ogs({ url: url })
+      ogImageUrl = result.ogImage?.at(0)?.url ?? GOOGLE_FAVICON_URL + url
+      if (!title) title = result.ogTitle ?? ""
+      if (!description) description = result.ogDescription ?? ""
+    }
+
+    return {
+      ogImageUrl: ogImageUrl,
+      title: title,
+      description: description,
     }
   }
 }
