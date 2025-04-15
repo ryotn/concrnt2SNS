@@ -49,7 +49,7 @@ class OgImage {
     let ogImageUrl = ""
     let title = ""
     let description = ""
-    if ("world.concrnt.hyperproxy.summary" in ccClient?.domainServices) {
+    if (ccClient && "world.concrnt.hyperproxy.summary" in ccClient?.domainServices) {
       const summaryUrl = `https://${ccClient.host}${ccClient.domainServices['world.concrnt.hyperproxy.summary'].path}?url=${encodeURIComponent(url)}`
       try {
         const { data } = await axios.get(summaryUrl)

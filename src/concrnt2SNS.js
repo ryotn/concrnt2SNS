@@ -71,7 +71,7 @@ function receivedPost(document) {
         if (text.length > 0 || files.length > 0) {
             media.downloader(files).then(filesBuffer => {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
-                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer)
+                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer, ccClient)
                 if (THREADS_ENABLE) threadsClient.post(text, filesBuffer)
                 if (NOSTR_ENABLE) nosterClient.post(text, filesBuffer)
             })
