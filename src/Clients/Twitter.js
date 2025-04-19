@@ -23,6 +23,8 @@ class Twitter {
     }
 
     async tweet(text, filesBuffer) {
+        // YoutubeMusicはwatchだけOGPが出ないのでYoutubeに置き換える
+        text = text.replace(/https:\/\/music\.youtube\.com\/watch/g, 'https://youtube.com/watch')
         const payload = {
             text: text
         }
