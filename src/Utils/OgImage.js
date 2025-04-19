@@ -53,7 +53,13 @@ class OgImage {
       const summaryUrl = `https://${ccClient.host}${ccClient.domainServices['world.concrnt.hyperproxy.summary'].path}?url=${encodeURIComponent(url)}`
       try {
         const { data } = await axios.get(summaryUrl)
-        ogImageUrl = data.icon.endsWith(".ico") ? GOOGLE_FAVICON_URL + url : data.icon
+        if (data.thumbnail) { // thumbnailがあれば使う
+          ogImageUrl = data.thumbnail
+        } else if (data.icon.endsWith(".ico")) {  // faviconがico形式の場合は、GoogleのFavicon取得APIを使う
+          ogImageUrl = GOOGLE_FAVICON_URL + url
+        } else { // それ以外は、iconを使う
+          ogImageUrl = data.icon
+        }
         title = data.title
         description = data.description
       } catch (e) {
@@ -61,7 +67,7 @@ class OgImage {
       }
     }
     
-    if (!ogImageUrl) {
+    if (!ogImageUrl) { // ccClientがない場合や、ccClientのsummaryが取得できなかった場合は、OpenGraphを使う
       const { result } = await ogs({ url: url })
       ogImageUrl = result.ogImage?.at(0)?.url ?? GOOGLE_FAVICON_URL + url
       if (!title) title = result.ogTitle ?? ""
