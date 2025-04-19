@@ -31,6 +31,7 @@ const NOSTR_RELAYS = process.env.NOSTR_RELAYS
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
 const media = new Media()
+const ccClient = await Client.createFromSubkey(CC_SUBKEY)
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
 const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKEN)
@@ -38,14 +39,12 @@ const nosterClient = NOSTR_ENABLE && new Nostr(NOSTR_RELAYS, NOSTR_PRIVATE_KEY)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
 async function start() {
-    const client = await Client.createFromSubkey(CC_SUBKEY)
-
-    const subscription = await client.newSocketListener()
-    const listenTimeline = LISTEN_TIMELINE || client.user.homeTimeline
+    const subscription = await ccClient.newSocketListener()
+    const listenTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
 
     subscription.on('MessageCreated', (message) => {
         const document = message.parsedDoc
-        if (document.signer != client.ccid) {
+        if (document.signer != ccClient.ccid) {
             return
         }
         receivedPost(document)
@@ -72,7 +71,7 @@ function receivedPost(document) {
         if (text.length > 0 || files.length > 0) {
             media.downloader(files).then(filesBuffer => {
                 if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
-                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer)
+                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer, ccClient)
                 if (THREADS_ENABLE) threadsClient.post(text, filesBuffer)
                 if (NOSTR_ENABLE) nosterClient.post(text, filesBuffer)
             })
