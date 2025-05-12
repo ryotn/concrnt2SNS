@@ -10,14 +10,15 @@ class Media {
             const response = await fetch(url)
             const arrayBuffer = await response.arrayBuffer()
             const resize = await this.resize(arrayBuffer)
-            const dataArray = new Uint8Array(resize)
+            const dataArray = new Uint8Array(resize.img)
 
             return {
                 "url": url,
-                "buffer": resize,
+                "buffer": resize.img,
                 "uint8Array": dataArray,
                 "type": "image/jpeg",
-                "flag": file.flag
+                "flag": file.flag,
+                "aspectRatio": resize.aspectRatio,
             }
         }))
 
@@ -33,7 +34,11 @@ class Media {
                 "buffer": buffer,
                 "uint8Array": dataArray,
                 "type": "video/mp4",
-                "flag": file.flag
+                "flag": file.flag,
+                "aspectRatio": {
+                    width: 4,
+                    height: 3
+                },
             }
         }))
 
@@ -42,6 +47,10 @@ class Media {
 
     async resize(arrayBuffer) {
         const imgSharp = new sharp(arrayBuffer)
+        const metadata = await imgSharp.metadata()
+        const width = metadata.width
+        const height = metadata.height
+
         let quality = 100
         let size = 10000000
         let img
@@ -56,7 +65,29 @@ class Media {
             quality -= 5
         }
 
-        return img
+        return {
+            img: img,
+            aspectRatio: this.getAspectRatio(width, height)
+        }
+    }
+
+    getAspectRatio(width, height) {
+        if (width === 0 || height === 0) {
+            return {
+                width: 4,
+                height: 3
+            }
+        }
+        const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b))
+        const ratioGCD = gcd(width, height)
+    
+        const ratioW = width / ratioGCD
+        const ratioH = height / ratioGCD
+
+        return {
+            width: ratioW,
+            height: ratioH
+        }
     }
 }
 

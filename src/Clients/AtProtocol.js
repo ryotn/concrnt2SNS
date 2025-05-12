@@ -185,10 +185,7 @@ class AtProtocol {
                     image: {
                         alt: "",
                         image: result.data.blob,
-                        aspectRatio: {
-                            width: 3,
-                            height: 2
-                        }
+                        aspectRatio: file.aspectRatio,
                     },
                     flag: file.flag
                 }
