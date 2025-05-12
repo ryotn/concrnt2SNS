@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import MP4Box from 'mp4box'
 
 class Media {
     async downloader(files) {
@@ -29,16 +30,17 @@ class Media {
             const buffer = new Buffer.from(arrayBuffer)
             const dataArray = new Uint8Array(buffer)
 
+            const { width, height } = await this.getVideoResolution(arrayBuffer)
+            console.log(`width:${width}, height:${height}`)
+            const aspectRatio = this.getAspectRatio(width, height)
+
             return {
                 "url": url,
                 "buffer": buffer,
                 "uint8Array": dataArray,
                 "type": "video/mp4",
                 "flag": file.flag,
-                "aspectRatio": {
-                    width: 4,
-                    height: 3
-                },
+                "aspectRatio": aspectRatio,
             }
         }))
 
@@ -71,16 +73,48 @@ class Media {
         }
     }
 
+    async getVideoResolution(arrayBuffer) {
+        return new Promise((resolve) => {
+            const mp4boxFile = MP4Box.createFile()
+            arrayBuffer.fileStart = 0  // 初期位置を指定
+
+            mp4boxFile.onReady = function (info) {
+                const videoTrack = info.tracks.find(track => 
+                    track.codec.startsWith('avc') || // H.264
+                    track.codec.startsWith('hev') || // H.265/HEVC
+                    track.codec.startsWith('mp4v') ||// MPEG-4 Visual
+                    track.codec.startsWith('hvc1')   // H.265/HEVC (別のFourCC)
+                )
+                if (videoTrack && videoTrack.video) {
+                    const width = videoTrack.video.width
+                    const height = videoTrack.video.height
+                    resolve({ width: width, height: height })  // 解像度を返す
+                } else {
+                    resolve({ width: 0, height: 0 })  // トラックが見つからなかった場合は { 0, 0 } を返す
+                }
+            }
+
+            mp4boxFile.onError = function (err) {
+                console.error('エラーが発生しました:', err)
+                resolve({ width: 0, height: 0 })  // エラーが発生した場合も { 0, 0 } を返す
+            }
+
+            mp4boxFile.appendBuffer(arrayBuffer)  // ArrayBuffer を直接渡す
+            mp4boxFile.flush()
+        })
+    }
+
     getAspectRatio(width, height) {
-        if (width === 0 || height === 0) {
+        // 幅または高さが 0 または未定義等の無効な値（falsy）であれば、アスペクト比 1:1 を返す
+        if (!width || !height) {
             return {
-                width: 4,
-                height: 3
+                width: 1,
+                height: 1
             }
         }
         const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b))
         const ratioGCD = gcd(width, height)
-    
+
         const ratioW = width / ratioGCD
         const ratioH = height / ratioGCD
 
