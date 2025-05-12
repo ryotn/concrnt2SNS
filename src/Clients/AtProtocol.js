@@ -156,7 +156,8 @@ class AtProtocol {
                             return {
                                 embed: {
                                     $type: 'app.bsky.embed.video',
-                                    video: jobStatus.jobStatus.blob
+                                    video: jobStatus.jobStatus.blob,
+                                    aspectRatio: video.aspectRatio,
                                 },
                                 flags: [video.flag]
                             }
@@ -185,10 +186,7 @@ class AtProtocol {
                     image: {
                         alt: "",
                         image: result.data.blob,
-                        aspectRatio: {
-                            width: 3,
-                            height: 2
-                        }
+                        aspectRatio: file.aspectRatio,
                     },
                     flag: file.flag
                 }
