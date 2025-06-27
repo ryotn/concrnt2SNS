@@ -58,8 +58,6 @@ String.prototype.removeMarkdown = function() {
         .replace(CC_SUMMARY_PATTERN, "")
         // Remove HTML tags
         .replace(/<\/?[^>]+(>|$)/g, "")
-        // Remove emphasis (bold, italic, strikethrough)
-        .replace(/(\*{1,2}|_{1,2}|~{2})(.*?)\1/g, "$2")
         // Remove headers
         .replace(/^(#{1,6})\s+(.*)/gm, "$2")
         // Remove inline code
@@ -78,7 +76,6 @@ String.prototype.removeMarkdown = function() {
         .replace(/^\s*\d+\.\s+/gm, "")
         // Remove extra spaces and newlines
         .replace(/^\s+|\s+$/g, "")
-        .replace(/\n{2,}/g, "\n")
 }
 
 String.prototype.replaceEmojis = function() {
