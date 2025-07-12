@@ -11,7 +11,7 @@
     "axios": "^1.7.7",
     "mp4box": "^0.5.4",
     "nostr-tools": "^2.11.0",
-    "open-graph-scraper": "^6.8.3",
+    "open-graph-scraper": "^6.10.0",
     "sharp": "^0.33.4",
     "twitter-api-v2": "^1.17.1"
   }
