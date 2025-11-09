@@ -28,7 +28,7 @@ NOSTR_PRIVATE_KEY="Nostrのプライベートキー"
 NOSTR_RELAYS="wss://から始まるリレーサーバーのURL、複数指定する場合はカンマで区切る 例:wss://relay1.com,wss://relay2.com,wss://relay3.com"
 NOSTR_LISTEN_TIMELINE="Nostrに転送するタイムラインのID、LISTEN_TIMELINEと同じ形式で1つ指定"
 CC_SUBKEY="コンカレのサブキー"
-LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定、このタイムラインにポストした場合はすべてのSNSに転送される"
+LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定、このタイムラインにポストした場合はすべてのSNSに転送される（ただし、各サービスの *_LISTEN_TIMELINE が設定されている場合はそちらが優先されます）"
 
 // Option（使わない場合は入れないこと）
 TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
