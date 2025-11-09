@@ -15,18 +15,22 @@ const TW_ACCESS_TOKEN = process.env.TW_ACCESS_TOKEN
 const TW_ACCESS_TOKEN_SECRET = process.env.TW_ACCESS_TOKEN_SECRET
 const TW_WEBHOOK_URL = process.env.TW_WEBHOOK_URL
 const TW_WEBHOOK_IMAGE_URL = process.env.TW_WEBHOOK_IMAGE_URL
+const TW_LISTEN_TIMELINE = process.env.TW_LISTEN_TIMELINE
 
 const BS_ENABLE = process.env.BS_ENABLE == "true"
 const BS_IDENTIFIER = process.env.BS_IDENTIFIER
 const BS_APP_PASSWORD = process.env.BS_APP_PASSWORD
 const BS_SERVICE = process.env.BS_SERVICE
+const BS_LISTEN_TIMELINE = process.env.BS_LISTEN_TIMELINE
 
 const THREADS_ENABLE = process.env.THREADS_ENABLE == "true"
 const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN
+const THREADS_LISTEN_TIMELINE = process.env.THREADS_LISTEN_TIMELINE
 
 const NOSTR_ENABLE = process.env.NOSTR_ENABLE == "true"
 const NOSTR_PRIVATE_KEY = process.env.NOSTR_PRIVATE_KEY
 const NOSTR_RELAYS = process.env.NOSTR_RELAYS
+const NOSTR_LISTEN_TIMELINE = process.env.NOSTR_LISTEN_TIMELINE
 
 const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
@@ -38,19 +42,26 @@ const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKE
 const nosterClient = NOSTR_ENABLE && new Nostr(NOSTR_RELAYS, NOSTR_PRIVATE_KEY)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
+let lastMessage = null
+let homeTimeline = null
+
 async function start() {
     const subscription = await ccClient.newSocketListener()
-    const listenTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
+    homeTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
 
     subscription.on('MessageCreated', (message) => {
         const document = message.parsedDoc
         if (document.signer != ccClient.ccid) {
             return
         }
+        if (lastMessage && lastMessage.resource.id == message.resource.id) {
+            return
+        }
+        lastMessage = message
         receivedPost(document)
     })
 
-    subscription.listen([listenTimeline])
+    subscription.listen([homeTimeline, TW_LISTEN_TIMELINE, BS_LISTEN_TIMELINE, THREADS_LISTEN_TIMELINE, NOSTR_LISTEN_TIMELINE].filter(tl => tl !== undefined))
 }
 
 function receivedPost(document) {
@@ -59,6 +70,11 @@ function receivedPost(document) {
         const text = ccMsgAnalysis.getPlaneText(body)
         const urls = ccMsgAnalysis.getURLs(text)
         const files = ccMsgAnalysis.getMediaFiles(body)
+
+        const isPostTw = document.timelines.includes(TW_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
+        const isPostBs = document.timelines.includes(BS_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
+        const isPostThreads = document.timelines.includes(THREADS_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
+        const isPostNostr = document.timelines.includes(NOSTR_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
 
         document.body.medias?.forEach(media => {
             files.push({
@@ -70,10 +86,10 @@ function receivedPost(document) {
 
         if (text.length > 0 || files.length > 0) {
             media.downloader(files).then(filesBuffer => {
-                if (TW_ENABLE) twitterClient.tweet(text, filesBuffer)
-                if (BS_ENABLE) bskyClient.post(text, urls, filesBuffer, ccClient)
-                if (THREADS_ENABLE) threadsClient.post(text, filesBuffer)
-                if (NOSTR_ENABLE) nosterClient.post(text, filesBuffer)
+                if (TW_ENABLE && isPostTw) twitterClient.tweet(text, filesBuffer)
+                if (BS_ENABLE && isPostBs) bskyClient.post(text, urls, filesBuffer, ccClient)
+                if (THREADS_ENABLE && isPostThreads) threadsClient.post(text, filesBuffer)
+                if (NOSTR_ENABLE && isPostNostr) nosterClient.post(text, filesBuffer)
             })
         }
     }
