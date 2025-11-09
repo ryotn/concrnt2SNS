@@ -71,10 +71,10 @@ function receivedPost(document) {
         const urls = ccMsgAnalysis.getURLs(text)
         const files = ccMsgAnalysis.getMediaFiles(body)
 
-        const isPostTw = document.timelines.includes(TW_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
-        const isPostBs = document.timelines.includes(BS_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
-        const isPostThreads = document.timelines.includes(THREADS_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
-        const isPostNostr = document.timelines.includes(NOSTR_LISTEN_TIMELINE) || document.timelines.includes(homeTimeline)
+        const isPostTw = (TW_LISTEN_TIMELINE && document.timelines.includes(TW_LISTEN_TIMELINE)) || document.timelines.includes(homeTimeline)
+        const isPostBs = (BS_LISTEN_TIMELINE && document.timelines.includes(BS_LISTEN_TIMELINE)) || document.timelines.includes(homeTimeline)
+        const isPostThreads = (THREADS_LISTEN_TIMELINE && document.timelines.includes(THREADS_LISTEN_TIMELINE)) || document.timelines.includes(homeTimeline)
+        const isPostNostr = (NOSTR_LISTEN_TIMELINE && document.timelines.includes(NOSTR_LISTEN_TIMELINE)) || document.timelines.includes(homeTimeline)
 
         document.body.medias?.forEach(media => {
             files.push({
