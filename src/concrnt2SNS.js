@@ -54,7 +54,7 @@ async function start() {
         if (document.signer != ccClient.ccid) {
             return
         }
-        if (lastMessage && lastMessage.resource.id == message.resource.id) {
+        if (lastMessage && lastMessage.resource.id === message.resource.id) {
             return
         }
         lastMessage = message
