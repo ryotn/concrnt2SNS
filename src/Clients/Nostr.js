@@ -29,7 +29,14 @@ class Nostr {
         }
 
         const signedEvent = finalizeEvent(eventTemplate, this.secretKey)
-        await Promise.all(pool.publish(this.relays, signedEvent)).catch(e => console.error(e))
+        const promises = pool.publish(this.relays, signedEvent)
+        const results = await Promise.allSettled(promises)
+
+        results.forEach((result, i) => {
+            if (result.status === 'rejected') {
+                console.error(`Failed to publish to relay ${this.relays[i]}:`, result.reason)
+            }
+        })
 
         pool.destroy()
     }
