@@ -53,10 +53,19 @@ async function start() {
         let document = event.parsedDoc
         let resourceID = event.item.resourceID
         if (!document) {
-            let message = await ccClient.getMessage(resourceID, event.item.owner, event.item.timelineID.split('@')[1])
-            document = message.document
+            try {
+                let message = await ccClient.getMessage(resourceID, event.item.owner, event.item.timelineID.split('@')[1])
+                if (!message || !message.document) {
+                    console.error("Failed to fetch message or document for resourceID:", resourceID)
+                    return
+                }
+                document = message.document
+            } catch (err) {
+                console.error("Error fetching message for resourceID:", resourceID, err)
+                return
+            }
         }
-        if (document.signer != ccClient.ccid) {
+        if (!document || document.signer != ccClient.ccid) {
             return
         }
         if (lastMessageResourceID && lastMessageResourceID === resourceID) {
