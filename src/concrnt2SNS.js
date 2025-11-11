@@ -42,22 +42,36 @@ const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKE
 const nosterClient = NOSTR_ENABLE && new Nostr(NOSTR_RELAYS, NOSTR_PRIVATE_KEY)
 const ccMsgAnalysis = new CCMsgAnalysis()
 
-let lastMessage = null
+let lastMessageResourceID = null
 let homeTimeline = null
 
 async function start() {
     const subscription = await ccClient.newSocketListener()
     homeTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
 
-    subscription.on('MessageCreated', (message) => {
-        const document = message.parsedDoc
-        if (document.signer != ccClient.ccid) {
+    subscription.on('MessageCreated', async (event) => {
+        let document = event.parsedDoc
+        let resourceID = event.item.resourceID
+        if (!document) {
+            try {
+                let message = await ccClient.getMessage(resourceID, event.item.owner, event.item.timelineID.split('@')[1])
+                if (!message || !message.document) {
+                    console.error("Failed to fetch message or document for resourceID:", resourceID)
+                    return
+                }
+                document = message.document
+            } catch (err) {
+                console.error("Error fetching message for resourceID:", resourceID, err)
+                return
+            }
+        }
+        if (document.signer !== ccClient.ccid) {
             return
         }
-        if (lastMessage && lastMessage.resource.id === message.resource.id) {
+        if (lastMessageResourceID && lastMessageResourceID === resourceID) {
             return
         }
-        lastMessage = message
+        lastMessageResourceID = resourceID
         receivedPost(document)
     })
 
