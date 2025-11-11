@@ -85,10 +85,15 @@ class Threads {
     }
 
     startNextRefreshTokenTimer(expires_at_ms) {
+        // 既存のタイマーがあればクリア
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+        }
+
         // timeoutの最大値は2147483647ms(約24.8日)なので最大値は超えないようにする
         const delay = Math.min(expires_at_ms - Date.now() - Threads.TOKEN_LIMIT_DAYS, 2147483647);
         if (delay > 0) {
-            setTimeout(async () => {
+            this.refreshTimer = setTimeout(async () => {
                 const newToken = await Threads.getRefreshToken(this.accessToken);
                 if (newToken) {
                     await Threads.saveAuth(newToken);
@@ -103,6 +108,14 @@ class Threads {
                     this.startNextRefreshTokenTimer(newToken.expires_at);
                 }
             }, delay);
+        }
+    }
+
+    destroy() {
+        // クリーンアップ: タイマーをクリア
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+            this.refreshTimer = null;
         }
     }
 
