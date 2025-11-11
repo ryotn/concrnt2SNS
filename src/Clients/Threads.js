@@ -28,9 +28,9 @@ class Threads {
             return false;
         }
 
-        let expires_at = (tokenInfo.expires_at * 1000) - Threads.TOKEN_LIMIT_DAYS;
+        let expires_at = tokenInfo.expires_at * 1000;
 
-        if (expires_at < Date.now() + Threads.TOKEN_LIMIT_DAYS) {
+        if (expires_at - Date.now() < Threads.TOKEN_LIMIT_DAYS) {
             const newToken = await Threads.getRefreshToken(token);
             if (newToken) {
                 await Threads.saveAuth(newToken);
@@ -41,7 +41,7 @@ class Threads {
 
         const userId = await Threads.getUserId(token);
         const client = new Threads(token, userId);
-        client.startNextRefreshTokenTimer(expires_at, token);
+        client.startNextRefreshTokenTimer(expires_at);
         return client;
     }
 
@@ -59,7 +59,7 @@ class Threads {
             return response.data.data;
         } catch (error) {
             console.error('アクセストークンの情報取得に失敗しました:', error.message);
-            return { is_valid: false }
+            return { is_valid: false };
         }
     }
 
@@ -79,17 +79,17 @@ class Threads {
                 "expires_at": Date.now() + (response.data.expires_in * 1000)
             };
         } catch (error) {
-            console.error('アクセストークンの情報取得に失敗しました:', error.message);
-            return undefined
+            console.error('アクセストークンの更新に失敗しました:', error.message);
+            return undefined;
         }
     }
 
-    startNextRefreshTokenTimer(expires_at_ms, accessToken) {
+    startNextRefreshTokenTimer(expires_at_ms) {
         // timeoutの最大値は2147483647ms(約24.8日)なので最大値は超えないようにする
         const delay = Math.min(expires_at_ms - Date.now() - Threads.TOKEN_LIMIT_DAYS, 2147483647);
         if (delay > 0) {
             setTimeout(async () => {
-                const newToken = await Threads.getRefreshToken(accessToken);
+                const newToken = await Threads.getRefreshToken(this.accessToken);
                 if (newToken) {
                     await Threads.saveAuth(newToken);
                     console.log('Threadsの新しいアクセストークンを取得しました');
@@ -100,7 +100,7 @@ class Threads {
                         },
                     };
 
-                    this.startNextRefreshTokenTimer(newToken.expires_at, newToken.access_token);
+                    this.startNextRefreshTokenTimer(newToken.expires_at);
                 }
             }, delay);
         }
