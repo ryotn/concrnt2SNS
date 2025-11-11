@@ -65,7 +65,7 @@ async function start() {
                 return
             }
         }
-        if (!document || document.signer != ccClient.ccid) {
+        if (!document || document.signer !== ccClient.ccid) {
             return
         }
         if (lastMessageResourceID && lastMessageResourceID === resourceID) {
