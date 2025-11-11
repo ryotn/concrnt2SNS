@@ -40,6 +40,10 @@ class Threads {
         }
 
         const userId = await Threads.getUserId(token);
+        if (typeof userId === 'undefined') {
+            console.error('ユーザーIDの取得に失敗しました。Threadsクライアントの作成に失敗しました。');
+            return false;
+        }
         const client = new Threads(token, userId);
         client.startNextRefreshTokenTimer(expires_at);
         return client;
@@ -248,8 +252,12 @@ class Threads {
     }
 
     static async saveAuth(authData, filePath = './threads_auth.json') {
-        // JSON文字列に変換して保存
-        await writeFile(filePath, JSON.stringify(authData, null, 2), 'utf8');
+        try {
+            // JSON文字列に変換して保存
+            await writeFile(filePath, JSON.stringify(authData, null, 2), 'utf8');
+        } catch (err) {
+            console.error('認証情報ファイルの保存エラー:', err);
+        }
     }
 
     static async loadAuth(filePath = './threads_auth.json') {
