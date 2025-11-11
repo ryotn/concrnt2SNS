@@ -28,9 +28,9 @@ class Threads {
             return false;
         }
 
-        let expires_at = (tokenInfo.expires_at * 1000) - Threads.TOKEN_LIMIT_DAYS;
+        let expires_at = tokenInfo.expires_at * 1000;
 
-        if (expires_at < Date.now() + Threads.TOKEN_LIMIT_DAYS) {
+        if (expires_at - Date.now() < Threads.TOKEN_LIMIT_DAYS) {
             const newToken = await Threads.getRefreshToken(token);
             if (newToken) {
                 await Threads.saveAuth(newToken);
