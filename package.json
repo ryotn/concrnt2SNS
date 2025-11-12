@@ -9,6 +9,7 @@
     "@concrnt/client": "^0.0.24",
     "@concrnt/worldlib": "^0.1.4",
     "axios": "^1.7.7",
+    "cheerio": "^1.1.2",
     "mp4box": "^0.5.4",
     "nostr-tools": "^2.11.0",
     "open-graph-scraper": "^6.10.0",

@@ -1,6 +1,6 @@
-import ogs from "open-graph-scraper";
 import sharp from "sharp";
 import axios from 'axios';
+import MetaTagExtractor from './MetaTagExtractor.js';
 
 const GOOGLE_FAVICON_URL = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url="
 
@@ -67,18 +67,20 @@ class OgImage {
       }
     }
 
-    if (!ogImageUrl) { // ccClientがない場合や、ccClientのsummaryが取得できなかった場合は、OpenGraphを使う
-      const { result } = await ogs({ url: url })
-      if (this.containsAmazonShortURL(url) && result.ogImage?.length > 0) {
-        // Amazonの短縮URLの場合、ogImageの中から特定のパターンを持つ画像を選ぶ
+    if (!ogImageUrl) { // ccClientがない場合や、ccClientのsummaryが取得できなかった場合は、MetaTagExtractorを使う
+      const extractor = new MetaTagExtractor()
+      const meta = await extractor.extractMeta(url)
+      
+      if (this.containsAmazonShortURL(url) && meta.images?.length > 0) {
+        // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
         // https://zenn.dev/st43/scraps/f9940dbba495d3
-        const imageUrl = this.findTargetAmazonImage(result)
+        const imageUrl = this.findTargetAmazonImageFromMeta(meta)
         ogImageUrl = imageUrl ? imageUrl : ""
       } else {
-        ogImageUrl = result.ogImage?.at(0)?.url ?? GOOGLE_FAVICON_URL + url
+        ogImageUrl = meta.images?.at(0) ?? GOOGLE_FAVICON_URL + url
       }
-      if (result.ogTitle) title = result.ogTitle
-      if (result.ogDescription) description = result.ogDescription
+      if (meta.og?.title || meta.title) title = meta.og?.title || meta.title
+      if (meta.og?.description || meta.description) description = meta.og?.description || meta.description
     }
 
     return {
@@ -114,6 +116,36 @@ class OgImage {
     // 画像IDを取り出す（prefixの後ろと、ドット（.）より前まで）
     // 例: "51Di4bc19jL"
     const idMatch = originalUrl.match(/https:\/\/m\.media-amazon\.com\/images\/I\/([^\.]+)\./)
+
+    if (!idMatch || !idMatch[1]) return undefined
+
+    const imageId = idMatch[1]
+
+    // 新しいURLフォーマットに埋め込む
+    const newUrl = `https://m.media-amazon.com/images/I/${imageId}.jpg_BO30,255,255,255_UF900,850_SR1910,1000,0,AmazonEmber,50,4,0,0_QL100_.jpg`
+
+    return newUrl
+  }
+
+  static findTargetAmazonImageFromMeta(meta) {
+    const prefix = "https://m.media-amazon.com/images/I/"
+
+    // 条件に合うURLを探す
+    const imageUrl = meta.images.find(url =>
+      url &&
+      url.startsWith(prefix) &&
+      url.includes("_SX") &&
+      url.includes("_SY")
+    )
+
+    if (!imageUrl) return undefined
+
+    // originalUrl例: 
+    // https://m.media-amazon.com/images/I/51Di4bc19jL.__AC_SX300_SY300_QL70_ML2_.jpg
+
+    // 画像IDを取り出す（prefixの後ろと、ドット（.）より前まで）
+    // 例: "51Di4bc19jL"
+    const idMatch = imageUrl.match(/https:\/\/m\.media-amazon\.com\/images\/I\/([^\.]+)\./)
 
     if (!idMatch || !idMatch[1]) return undefined
 
