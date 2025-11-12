@@ -98,18 +98,27 @@ class Threads {
         const delay = Math.min(expires_at_ms - Date.now() - Threads.TOKEN_LIMIT_DAYS, 2147483647);
         if (delay > 0) {
             this.refreshTimer = setTimeout(async () => {
-                const newToken = await Threads.getRefreshToken(this.accessToken);
-                if (newToken) {
-                    await Threads.saveAuth(newToken);
-                    console.log('Threadsの新しいアクセストークンを取得しました');
-                    this.accessToken = newToken.access_token;
-                    this.HEADERS = {
-                        headers: {
-                            Authorization: `Bearer ${this.accessToken}`,
-                        },
-                    };
-
-                    this.startNextRefreshTokenTimer(newToken.expires_at);
+                try {
+                    const newToken = await Threads.getRefreshToken(this.accessToken);
+                    if (newToken) {
+                        await Threads.saveAuth(newToken);
+                        console.log('Threadsの新しいアクセストークンを取得しました');
+                        this.accessToken = newToken.access_token;
+                        this.HEADERS = {
+                            headers: {
+                                Authorization: `Bearer ${this.accessToken}`,
+                            },
+                        };
+                        this.startNextRefreshTokenTimer(newToken.expires_at);
+                    } else {
+                        console.error('トークンの更新に失敗しました。次回の更新を試みます。');
+                        // エラー時に再試行する（例: 1時間後）
+                        this.startNextRefreshTokenTimer(Date.now() + (60 * 60 * 1000));
+                    }
+                } catch (error) {
+                    console.error('トークン更新中にエラーが発生しました:', error);
+                    // エラー時に再試行する（例: 1時間後）
+                    this.startNextRefreshTokenTimer(Date.now() + (60 * 60 * 1000));
                 }
             }, delay);
         }
