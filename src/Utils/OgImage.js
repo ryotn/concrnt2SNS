@@ -68,19 +68,24 @@ class OgImage {
     }
 
     if (!ogImageUrl) { // ccClientがない場合や、ccClientのsummaryが取得できなかった場合は、MetaTagExtractorを使う
-      const extractor = new MetaTagExtractor()
-      const meta = await extractor.extractMeta(url)
-      
-      if (this.containsAmazonShortURL(url) && meta.images?.length > 0) {
-        // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
-        // https://zenn.dev/st43/scraps/f9940dbba495d3
-        const imageUrl = this.findTargetAmazonImageFromMeta(meta)
-        ogImageUrl = imageUrl ? imageUrl : ""
-      } else {
-        ogImageUrl = meta.images?.at(0) ?? GOOGLE_FAVICON_URL + url
+      try {
+        const extractor = new MetaTagExtractor()
+        const meta = await extractor.extractMeta(url)
+        
+        if (this.containsAmazonShortURL(url) && meta.images?.length > 0) {
+          // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
+          // https://zenn.dev/st43/scraps/f9940dbba495d3
+          const imageUrl = this.findTargetAmazonImageFromMeta(meta)
+          ogImageUrl = imageUrl ? imageUrl : ""
+        } else {
+          ogImageUrl = meta.images?.at(0) ?? GOOGLE_FAVICON_URL + url
+        }
+        if (meta.og?.title || meta.title) title = meta.og?.title || meta.title
+        if (meta.og?.description || meta.description) description = meta.og?.description || meta.description
+      } catch (e) {
+        console.error(e)
+        ogImageUrl = GOOGLE_FAVICON_URL + url
       }
-      if (meta.og?.title || meta.title) title = meta.og?.title || meta.title
-      if (meta.og?.description || meta.description) description = meta.og?.description || meta.description
     }
 
     return {
