@@ -133,3 +133,6 @@ env.js
 
 # test
 test.js
+
+# threads auth
+threads_auth.json
