@@ -72,7 +72,10 @@ class OgImage {
         const extractor = new MetaTagExtractor()
         const meta = await extractor.extractMeta(url)
         
-        if (this.containsAmazonShortURL(url)) {
+        if (this.isAmazonPrimeVideoURL(url)) {
+          // Prime VideoのURLの場合、OGP画像は取れないのでGoogle Faviconを使用
+          ogImageUrl = GOOGLE_FAVICON_URL + url
+        } else if (this.containsAmazonShortURL(url)) {
           // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
           // https://zenn.dev/st43/scraps/f9940dbba495d3
           const imageUrl = this.findTargetAmazonImageFromMeta(meta)
@@ -97,6 +100,12 @@ class OgImage {
 
   static containsAmazonShortURL(text) {
     const pattern = /https?:\/\/(?:a\.co|amzn\.to|amzn\.asia|amzn\.eu|(?:www\.)?amazon\.co\.jp)\/[^\s]+/i
+    return pattern.test(text)
+  }
+
+  static isAmazonPrimeVideoURL(text) {
+    // Prime VideoのURLはgp/videoを含む
+    const pattern = /https?:\/\/(?:www\.)?amazon\.co\.jp\/gp\/video\//i
     return pattern.test(text)
   }
 
@@ -140,12 +149,11 @@ class OgImage {
       return undefined
     }
 
-    // 条件に合うURLを探す
+    // 条件に合うURLを探す（_SXまたは_SYのいずれかを含む）
     const imageUrl = meta.images.find(url =>
       url &&
       url.startsWith(prefix) &&
-      url.includes("_SX") &&
-      url.includes("_SY")
+      (url.includes("_SX") || url.includes("_SY"))
     )
 
     if (!imageUrl) return undefined
