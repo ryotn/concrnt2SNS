@@ -45,7 +45,7 @@ class MetaTagExtractor {
       const twitter = this._extractTwitterCard($);
 
       // 画像URLの抽出（重複を除去）
-      const images = this._extractImages(og, twitter);
+      const images = this._extractImages(og, twitter, $);
 
       return {
         title,
@@ -157,7 +157,7 @@ class MetaTagExtractor {
    * 画像URLの抽出と重複除去
    * @private
    */
-  _extractImages(og, twitter) {
+  _extractImages(og, twitter, $) {
     const imageUrls = new Set();
 
     // OGP画像を追加
@@ -184,6 +184,58 @@ class MetaTagExtractor {
         twitter['image:src'].forEach(url => imageUrls.add(url));
       } else {
         imageUrls.add(twitter['image:src']);
+      }
+    }
+
+    // フォールバック: 他のメタタグから画像を抽出
+    if (imageUrls.size === 0 && $) {
+      // <meta name="image"> タグ
+      const metaImage = $('meta[name="image"]').attr('content');
+      if (metaImage) imageUrls.add(metaImage);
+
+      // <link rel="image_src"> タグ
+      const linkImageSrc = $('link[rel="image_src"]').attr('href');
+      if (linkImageSrc) imageUrls.add(linkImageSrc);
+
+      // <meta itemprop="image"> タグ（Schema.org）
+      const itemPropImage = $('meta[itemprop="image"]').attr('content');
+      if (itemPropImage) imageUrls.add(itemPropImage);
+
+      // Amazon固有: landingImageタグ（JSON形式）
+      const landingImage = $('#landingImage').attr('data-a-dynamic-image');
+      if (landingImage) {
+        try {
+          const imageData = JSON.parse(landingImage);
+          Object.keys(imageData).forEach(url => imageUrls.add(url));
+        } catch (e) {
+          // JSON parse error - skip
+        }
+      }
+
+      // Amazon固有: imgBlkFrontタグ（主要商品画像）
+      const imgBlkFront = $('#imgBlkFront').attr('data-a-dynamic-image');
+      if (imgBlkFront) {
+        try {
+          const imageData = JSON.parse(imgBlkFront);
+          Object.keys(imageData).forEach(url => imageUrls.add(url));
+        } catch (e) {
+          // JSON parse error - skip
+        }
+      }
+
+      // 一般的な画像タグのフォールバック（最後の手段）
+      if (imageUrls.size === 0) {
+        $('img[src]').slice(0, 5).each((_, elem) => {
+          const src = $(elem).attr('src');
+          if (src && (src.startsWith('http') || src.startsWith('//'))) {
+            // 相対URLを絶対URLに変換
+            if (src.startsWith('//')) {
+              imageUrls.add('https:' + src);
+            } else if (src.startsWith('http')) {
+              imageUrls.add(src);
+            }
+          }
+        });
       }
     }
 
