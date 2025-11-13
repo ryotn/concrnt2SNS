@@ -76,7 +76,7 @@ class OgImage {
           // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
           // https://zenn.dev/st43/scraps/f9940dbba495d3
           const imageUrl = this.findTargetAmazonImageFromMeta(meta)
-          ogImageUrl = imageUrl ? imageUrl : ""
+          ogImageUrl = imageUrl || meta.images?.at(0) || GOOGLE_FAVICON_URL + url
         } else {
           ogImageUrl = meta.images?.at(0) ?? GOOGLE_FAVICON_URL + url
         }
