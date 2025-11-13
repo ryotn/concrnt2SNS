@@ -72,7 +72,7 @@ class OgImage {
         const extractor = new MetaTagExtractor()
         const meta = await extractor.extractMeta(url)
         
-        if (this.containsAmazonShortURL(url) && meta.images?.length > 0) {
+        if (this.containsAmazonShortURL(url)) {
           // Amazonの短縮URLの場合、imagesの中から特定のパターンを持つ画像を選ぶ
           // https://zenn.dev/st43/scraps/f9940dbba495d3
           const imageUrl = this.findTargetAmazonImageFromMeta(meta)
@@ -134,6 +134,11 @@ class OgImage {
 
   static findTargetAmazonImageFromMeta(meta) {
     const prefix = "https://m.media-amazon.com/images/I/"
+
+    // 画像が存在しない場合はundefinedを返す
+    if (!meta.images || meta.images.length === 0) {
+      return undefined
+    }
 
     // 条件に合うURLを探す
     const imageUrl = meta.images.find(url =>
