@@ -178,6 +178,15 @@ class MetaTagExtractor {
       }
     }
 
+    // Twitter画像:srcも追加
+    if (twitter['image:src']) {
+      if (Array.isArray(twitter['image:src'])) {
+        twitter['image:src'].forEach(url => imageUrls.add(url));
+      } else {
+        imageUrls.add(twitter['image:src']);
+      }
+    }
+
     return Array.from(imageUrls);
   }
 }
