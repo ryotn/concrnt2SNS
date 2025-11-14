@@ -68,13 +68,13 @@ Markdown形式のテキストをプレーンテキストに変換します。
 Array<{
   url: string,      // メディアファイルのURL
   type: string,     // "image" または "video"
-  flag?: string     // センシティブメディアフラグ（porn, hard, nude, warn など）
+  flag?: string     // センシティブコンテンツタイプ（porn, hard, nude, warn など）
 }>
 ```
 
 ## センシティブメディアの処理
 
-Concrntでは`<details>`タグでメディアをラップすることでセンシティブメディアとしてマークできます。`<summary>`タグのテキストがフラグとして使用されます。
+Concrntでは`<details>`タグでメディアをラップすることでセンシティブメディアとしてマークできます。`<summary>`タグのテキストがセンシティブコンテンツタイプとして使用されます。
 
 ```markdown
 <details>
@@ -83,7 +83,7 @@ Concrntでは`<details>`タグでメディアをラップすることでセン�
 </details>
 ```
 
-上記の例では、画像に`flag: "porn"`が付与されます。
+上記の例では、画像にセンシティブコンテンツタイプ`"porn"`が付与されます。
 
 ## String拡張機能
 

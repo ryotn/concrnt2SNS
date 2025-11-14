@@ -312,4 +312,5 @@ threadsClient.destroy();
 - カルーセルの処理にも時間がかかります
 - センシティブコンテンツのフラグ設定はサポートされていません
 - アクセストークンは`threads_auth.json`に保存されます（.gitignoreに追加推奨）
-- IFTTT Proアカウントは不要です（直接API使用）
+- ThreadsクライアントはIFTTTを使用しません。直接APIを利用します。
+  ※IFTTT Proアカウントが必要なのはTwitterクライアントのみです。

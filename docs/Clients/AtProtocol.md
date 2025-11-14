@@ -195,7 +195,7 @@ OGP画像を外部埋め込みとしてアップロードします。
 サービス認証トークンを取得します。
 
 **パラメータ:**
-- `aud` (string): Audience（例: `did:web:video.bsky.app`）
+- `aud` (string): Audience（JWT（JSON Web Token）の標準クレーム。例: `did:web:video.bsky.app`）
 - `lxm` (string): Lexicon method（例: `app.bsky.video.uploadVideo`）
 
 **戻り値:**
