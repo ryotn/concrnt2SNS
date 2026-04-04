@@ -1,5 +1,23 @@
+import { format as utilFormat } from 'node:util';
+
 const LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 const DISCORD_MENTION_ID = process.env.DISCORD_MENTION_ID;
+
+/**
+ * Safely format arbitrary values into a human-readable string.
+ * - Error objects: uses stack (includes message) or falls back to message/String()
+ * - Other values: uses util.format (handles circular refs, objects, primitives)
+ */
+function safeFormat(...args) {
+	try {
+		return utilFormat(...args);
+	} catch {
+		return args.map(a => {
+			if (a instanceof Error) return a.stack || a.message || String(a);
+			try { return JSON.stringify(a); } catch { return String(a); }
+		}).join(' ');
+	}
+}
 
 class Logger {
 	constructor(options = {}) {
@@ -37,31 +55,31 @@ class Logger {
 			const [first, ...rest] = args;
 			let isMention = false;
 			if (rest.length && typeof rest[0] === 'boolean') isMention = rest.shift();
-			logger.info(typeof first === 'string' ? first : JSON.stringify(first), isMention, ...rest);
+			logger.info(safeFormat(first, ...rest), isMention);
 		};
 		console.info = (...args) => {
 			const [first, ...rest] = args;
 			let isMention = false;
 			if (rest.length && typeof rest[0] === 'boolean') isMention = rest.shift();
-			logger.info(typeof first === 'string' ? first : JSON.stringify(first), isMention, ...rest);
+			logger.info(safeFormat(first, ...rest), isMention);
 		};
 		console.warn = (...args) => {
 			const [first, ...rest] = args;
 			let isMention = false;
 			if (rest.length && typeof rest[0] === 'boolean') isMention = rest.shift();
-			logger.warn(typeof first === 'string' ? first : JSON.stringify(first), isMention, ...rest);
+			logger.warn(safeFormat(first, ...rest), isMention);
 		};
 		console.error = (...args) => {
 			const [first, ...rest] = args;
 			let isMention = false;
 			if (rest.length && typeof rest[0] === 'boolean') isMention = rest.shift();
-			logger.error(typeof first === 'string' ? first : JSON.stringify(first), isMention, ...rest);
+			logger.error(safeFormat(first, ...rest), isMention);
 		};
 		console.debug = (...args) => {
 			const [first, ...rest] = args;
 			let isMention = false;
 			if (rest.length && typeof rest[0] === 'boolean') isMention = rest.shift();
-			logger.debug(typeof first === 'string' ? first : JSON.stringify(first), isMention, ...rest);
+			logger.debug(safeFormat(first, ...rest), isMention);
 		};
 	}
 
@@ -84,7 +102,7 @@ class Logger {
 	format(level, msg, isMention = false) {
 		const ts = new Date().toISOString();
 		const lbl = this.label ? `[${this.label}] ` : '';
-		const body = typeof msg === 'string' ? msg : JSON.stringify(msg);
+		const body = typeof msg === 'string' ? msg : safeFormat(msg);
 		const hasMentionId = typeof DISCORD_MENTION_ID !== 'undefined' && DISCORD_MENTION_ID !== null && String(DISCORD_MENTION_ID).trim() !== '';
 		const mention = isMention && hasMentionId ? `<@${DISCORD_MENTION_ID}> ` : '';
 		return `${mention}${ts} ${level.toUpperCase()}: ${lbl}${body}`;
