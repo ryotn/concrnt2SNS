@@ -132,22 +132,6 @@ class Threads {
         }
     }
 
-    static async getUserId(accessToken) {
-        try {
-            const response = await axios.get(
-                `https://graph.threads.net/${Threads.graphApiVersion}/me`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                }
-            );
-            return response.data.id;
-        } catch (error) {
-            console.error('ユーザーIDの取得に失敗しました:', error.message);
-        }
-    }
-
     async post(text, fileBuffer) {
         try {
             if (fileBuffer.length === 0) {
