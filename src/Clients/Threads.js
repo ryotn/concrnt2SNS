@@ -23,11 +23,11 @@ class Threads {
     static async create(accessToken) {
         let token = await Threads.loadAuth() || accessToken;
         const tokenInfo = await Threads.getTokenInfo(token);
-        let userId = tokenInfo.user_id;
+        const userId = tokenInfo.user_id;
         if (tokenInfo.is_valid === false) {
             console.error('無効なアクセストークンです。Threadsクライアントの作成に失敗しました。');
             return false;
-        } else if (userId === null || typeof userId === 'undefined') {
+        } else if (userId == null) {
             console.error('アクセストークンからユーザーIDを取得できませんでした。Threadsクライアントの作成に失敗しました。');
             return false;
         }
