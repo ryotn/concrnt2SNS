@@ -5,6 +5,9 @@ import AtProtocol from './Clients/AtProtocol.js'
 import Threads from './Clients/Threads.js'
 import Nostr from './Clients/Nostr.js'
 import CCMsgAnalysis from './Utils/ConcrntMessageAnalysis.js'
+import Logger from './Utils/Logger.js'
+
+Logger.overrideConsole({ level: 'info', label: 'concrnt2SNS' })
 
 const CC_SUBKEY = process.env.CC_SUBKEY
 
