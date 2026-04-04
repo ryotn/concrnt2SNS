@@ -23,14 +23,19 @@ class Threads {
     static async create(accessToken) {
         let token = await Threads.loadAuth() || accessToken;
         const tokenInfo = await Threads.getTokenInfo(token);
+        const userId = tokenInfo.user_id;
         if (tokenInfo.is_valid === false) {
             console.error('無効なアクセストークンです。Threadsクライアントの作成に失敗しました。');
+            return false;
+        } else if (userId == null) {
+            console.error('アクセストークンからユーザーIDを取得できませんでした。Threadsクライアントの作成に失敗しました。');
             return false;
         }
 
         let expires_at = tokenInfo.expires_at * 1000;
 
         if (expires_at - Date.now() < Threads.TOKEN_LIMIT_DAYS) {
+            console.info('アクセストークンの有効期限が近いため、更新を試みます。');
             const newToken = await Threads.getRefreshToken(token);
             if (newToken) {
                 await Threads.saveAuth(newToken);
@@ -39,11 +44,6 @@ class Threads {
             }
         }
 
-        const userId = await Threads.getUserId(token);
-        if (typeof userId === 'undefined') {
-            console.error('ユーザーIDの取得に失敗しました。Threadsクライアントの作成に失敗しました。');
-            return false;
-        }
         const client = new Threads(token, userId);
         client.startNextRefreshTokenTimer(expires_at);
         return client;
@@ -129,22 +129,6 @@ class Threads {
         if (this.refreshTimer) {
             clearTimeout(this.refreshTimer);
             this.refreshTimer = null;
-        }
-    }
-
-    static async getUserId(accessToken) {
-        try {
-            const response = await axios.get(
-                `https://graph.threads.net/${Threads.graphApiVersion}/me`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                }
-            );
-            return response.data.id;
-        } catch (error) {
-            console.error('ユーザーIDの取得に失敗しました:', error.message);
         }
     }
 
