@@ -25,10 +25,10 @@ class Threads {
         const tokenInfo = await Threads.getTokenInfo(token);
         const userId = tokenInfo.user_id;
         if (tokenInfo.is_valid === false) {
-            console.error('無効なアクセストークンです。Threadsクライアントの作成に失敗しました。');
+            console.error('無効なアクセストークンです。Threadsクライアントの作成に失敗しました。', true);
             return false;
         } else if (userId == null) {
-            console.error('アクセストークンからユーザーIDを取得できませんでした。Threadsクライアントの作成に失敗しました。');
+            console.error('ユーザーIDを取得できませんでした。Threadsクライアントの作成に失敗しました。', true);
             return false;
         }
 
@@ -62,7 +62,7 @@ class Threads {
             console.log('アクセストークン情報:', response.data.data);
             return response.data.data;
         } catch (error) {
-            console.error('アクセストークンの情報取得に失敗しました:', error.message);
+            console.error('アクセストークンの情報取得に失敗しました:', true, error.message);
             return { is_valid: false };
         }
     }
@@ -83,7 +83,7 @@ class Threads {
                 "expires_at": Date.now() + (response.data.expires_in * 1000)
             };
         } catch (error) {
-            console.error('アクセストークンの更新に失敗しました:', error.message);
+            console.error('アクセストークンの更新に失敗しました:', true, error.message);
             return undefined;
         }
     }
