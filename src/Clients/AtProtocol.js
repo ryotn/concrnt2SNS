@@ -28,9 +28,9 @@ class AtProtocol {
             password: appPassword
         })
 
-        const safeLoginResult = { ...loginResult, data: { ...loginResult.data, accessJwt: '***' } }
-        console.log(`BS Login : ${JSON.stringify(safeLoginResult)}`)
-        //console.log(`BS Login : ${JSON.stringify(loginResult)}`)
+        const safeLoginResult = { ...loginResult, data: { ...loginResult.data, accessJwt: '***', refreshJwt: '***' } }
+        console.log(`BS Login : ${JSON.stringify(safeLoginResult, null, 2)}`)
+        //console.log(`BS Login : ${JSON.stringify(loginResult, null, 2)}`)
         // audの取得
         // あんまりイケてないカモ・・・
         const jwt = loginResult.data.accessJwt.split(".").map((jwt) => {
