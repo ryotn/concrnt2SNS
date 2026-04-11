@@ -39,6 +39,10 @@ const LISTEN_TIMELINE = process.env.LISTEN_TIMELINE
 
 const media = new Media()
 const ccClient = await Client.createFromSubkey(CC_SUBKEY)
+if (!ccClient) {
+    console.error("Failed to create Concrnt client.")
+    process.exit(1)
+}
 const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_WEBHOOK_URL, TW_WEBHOOK_IMAGE_URL)
 const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKEN)
