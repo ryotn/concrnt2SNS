@@ -8,7 +8,8 @@ const CC_DETAILS_PATTERN = /<details>[\s\S]*?<\/details>/g
 const CC_SUMMARY_PATTERN = /<summary>[\s\S]*?<\/summary>/g
 const CC_HTMLTAG_AND_RN_PATTERN = /<[^>]*>|\r?\n/g
 const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-@]+/g
-const CC_REPLY_MENTION_PATTERN = /(^|[^A-Za-z0-9_])[@＠]([A-Za-z0-9_]{1,15})\b/g
+const TW_USERNAME_MAX_LENGTH = 15
+const CC_REPLY_MENTION_PATTERN = new RegExp(`(^|[^A-Za-z0-9_])[@＠]([A-Za-z0-9_]{1,${TW_USERNAME_MAX_LENGTH}})\\b`, "g")
 
 class ConcrntMessageAnalysis {
     getPlaneText(body) {
@@ -108,7 +109,7 @@ String.prototype.replaceSpecialCharacter = function() {
 
     for (const urlMatch of this.matchAll(CC_URL_PATTERN)) {
         const url = urlMatch[0]
-        const index = urlMatch.index ?? 0
+        const index = urlMatch.index
         result += replaceReplyMention(this.slice(currentIndex, index))
         result += url
         currentIndex = index + url.length
