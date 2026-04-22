@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import ConcrntMessageAnalysis from "./ConcrntMessageAnalysis.js"
+import ConcrntMessageAnalysis from "../../src/Utils/ConcrntMessageAnalysis.js"
 
 const analysis = new ConcrntMessageAnalysis()
 
