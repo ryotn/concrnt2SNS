@@ -7,7 +7,8 @@ const CC_VIDEO_PATTERN = /<video.*(?!<\/video>)\/video>/g
 const CC_DETAILS_PATTERN = /<details>[\s\S]*?<\/details>/g
 const CC_SUMMARY_PATTERN = /<summary>[\s\S]*?<\/summary>/g
 const CC_HTMLTAG_AND_RN_PATTERN = /<[^>]*>|\r?\n/g
-const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-]+/
+const CC_URL_PATTERN = /https?:\/\/[\w/:%#\$&\?~\.=\+\-@]+/g
+const CC_REPLY_MENTION_PATTERN = /(^|[^A-Za-z0-9_])[@＠]([A-Za-z0-9_]{1,15})\b/g
 
 class ConcrntMessageAnalysis {
     getPlaneText(body) {
@@ -98,10 +99,23 @@ String.prototype.replaceEmojis = function() {
 }
 
 String.prototype.replaceSpecialCharacter = function() {
-    return this
-        // @{英数字}はTwitterではリプライになるので、[@]に変換して無効化する。
-        // 全角＠でもリプライになってしまう・・・
-        .replace(/@/g, "[@]")
+    const replaceReplyMention = (text) => {
+        return text.replace(CC_REPLY_MENTION_PATTERN, "$1[@]$2")
+    }
+
+    let result = ""
+    let currentIndex = 0
+
+    for (const urlMatch of this.matchAll(CC_URL_PATTERN)) {
+        const url = urlMatch[0]
+        const index = urlMatch.index ?? 0
+        result += replaceReplyMention(this.slice(currentIndex, index))
+        result += url
+        currentIndex = index + url.length
+    }
+
+    result += replaceReplyMention(this.slice(currentIndex))
+    return result
 }
 
 export default ConcrntMessageAnalysis
