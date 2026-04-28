@@ -3,13 +3,28 @@ import assert from "node:assert/strict"
 import Twitter from "../../src/Clients/Twitter.js"
 
 class MockTwitter extends Twitter {
+    constructor(...args) {
+        super(...args)
+        this.twitterClient = {
+            v2: {
+                tweet: async (payload) => {
+                    this.lastTweetPayload = payload
+                }
+            }
+        }
+    }
+
     async createPost(payload) {
         this.lastPayload = payload
+    }
+
+    async uploadMedia() {
+        return ["mock-media-id"]
     }
 }
 
 test("テキストのみ投稿ではBuffer向けpayloadが生成される", async () => {
-    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
     await twitter.tweet("https://music.youtube.com/watch?v=1", [])
 
     assert.deepEqual(twitter.lastPayload, {
@@ -20,7 +35,7 @@ test("テキストのみ投稿ではBuffer向けpayloadが生成される", asyn
 })
 
 test("画像投稿は最大4枚までpayloadに含める", () => {
-    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
     const files = [1, 2, 3, 4, 5].map((i) => ({ type: "image/jpeg", url: `https://example.com/${i}.jpg` }))
 
     const payload = twitter.buildBufferPayload("images", files)
@@ -36,14 +51,14 @@ test("画像投稿は最大4枚までpayloadに含める", () => {
 })
 
 test("動画投稿はvideoフィールドを使う", () => {
-    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
     const payload = twitter.buildBufferPayload("video", [{ type: "video/mp4", url: "https://example.com/v.mp4" }])
 
     assert.deepEqual(payload.media, { video: "https://example.com/v.mp4" })
 })
 
 test("画像と動画の同時投稿はエラーにする", () => {
-    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
 
     assert.throws(
         () => twitter.buildBufferPayload("mixed", [
@@ -54,7 +69,7 @@ test("画像と動画の同時投稿はエラーにする", () => {
 })
 
 test("動画2本以上の同時投稿はエラーにする", () => {
-    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
 
     assert.throws(
         () => twitter.buildBufferPayload("multi video", [
@@ -62,4 +77,23 @@ test("動画2本以上の同時投稿はエラーにする", () => {
             { type: "video/mp4", url: "https://example.com/v2.mp4" }
         ])
     )
+})
+
+test("isMediaFlagが無ければBuffer経由で投稿する", async () => {
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
+    await twitter.tweet("text only", [])
+
+    assert.ok(twitter.lastPayload)
+    assert.equal(twitter.lastTweetPayload, undefined)
+})
+
+test("isMediaFlagがあればX API経由で投稿する", async () => {
+    const twitter = new MockTwitter("a", "b", "c", "d", "token", "profile")
+    await twitter.tweet("flag media", [{ type: "image/jpeg", url: "https://example.com/1.jpg", flag: "porn" }])
+
+    assert.equal(twitter.lastPayload, undefined)
+    assert.deepEqual(twitter.lastTweetPayload, {
+        text: "flag media",
+        media: { media_ids: ["mock-media-id"] }
+    })
 })
