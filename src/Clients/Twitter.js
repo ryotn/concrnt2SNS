@@ -14,7 +14,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, bufferChannelId) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -23,7 +23,13 @@ class Twitter {
         })
 
         this.bufferAccessToken = bufferAccessToken
-        this.bufferChannelId = bufferChannelId
+        this.bufferChannelId = undefined
+        this.bufferChannelIdError = undefined
+        this.bufferChannelIdPromise = this.initializeBufferChannelId()
+            .catch((error) => {
+                this.bufferChannelIdError = error
+                return undefined
+            })
     }
 
     async tweet(text, filesBuffer) {
@@ -182,10 +188,17 @@ query GetChannels($organizationId: String!) {
         throw new Error('Buffer X channel is not found')
     }
 
+    async ensureBufferChannelId() {
+        if (this.bufferChannelId) return this.bufferChannelId
+        if (this.bufferChannelIdPromise) await this.bufferChannelIdPromise
+        if (this.bufferChannelIdError) throw this.bufferChannelIdError
+        if (!this.bufferChannelId) throw new Error('Buffer channel ID is not initialized')
+        return this.bufferChannelId
+    }
+
     async createPost(payload) {
-        if (!this.bufferAccessToken || !this.bufferChannelId) {
-            throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_CHANNEL_ID are required')
-        }
+        if (!this.bufferAccessToken) throw new Error('TW_BUFFER_ACCESS_TOKEN is required')
+        await this.ensureBufferChannelId()
 
         try {
             const responseData = await this.requestBufferGraphQL(this.buildBufferMutation(payload))

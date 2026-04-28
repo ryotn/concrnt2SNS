@@ -5,6 +5,11 @@ import Twitter from "../../src/Clients/Twitter.js"
 class MockTwitter extends Twitter {
     constructor(...args) {
         super(...args)
+        const presetChannelId = args[5] || "bufferChannelId"
+        this.bufferChannelId = presetChannelId
+        this.bufferChannelIdError = undefined
+        this.bufferChannelIdPromise = Promise.resolve(presetChannelId)
+        this.queries = []
         this.twitterClient = {
             v2: {
                 tweet: async (payload) => {

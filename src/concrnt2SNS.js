@@ -52,15 +52,6 @@ let lastMessageResourceID = null
 let homeTimeline = null
 
 async function start() {
-    if (TW_ENABLE) {
-        try {
-            await twitterClient.initializeBufferChannelId()
-        } catch (error) {
-            console.error("Failed to initialize Buffer channel ID.", error)
-            process.exit(1)
-        }
-    }
-
     const subscription = await ccClient.newSocketListener()
     homeTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
 
