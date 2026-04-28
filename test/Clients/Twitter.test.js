@@ -5,7 +5,7 @@ import Twitter from "../../src/Clients/Twitter.js"
 class MockTwitter extends Twitter {
     constructor(...args) {
         super(...args)
-        const mockBufferChannelId = args[5] || "bufferChannelId"
+        const mockBufferChannelId = "bufferChannelId"
         this.bufferChannelId = mockBufferChannelId
         this.bufferChannelIdError = undefined
         this.bufferChannelIdPromise = Promise.resolve(mockBufferChannelId)
@@ -55,19 +55,19 @@ class MockTwitter extends Twitter {
 }
 
 test("テキストのみ投稿ではBuffer向けpayloadが生成される", async () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     await twitter.tweet("https://music.youtube.com/watch?v=1", [])
 
     assert.deepEqual(twitter.lastPayload, {
         text: "https://youtube.com/watch?v=1",
-        channelId: "bufferProfileId",
+        channelId: "bufferChannelId",
         schedulingType: "automatic",
         mode: "shareNow"
     })
 })
 
 test("画像投稿は最大4枚までpayloadに含める", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     const files = [1, 2, 3, 4, 5].map((i) => ({ type: "image/jpeg", url: `https://example.com/${i}.jpg` }))
 
     const payload = twitter.buildBufferPayload("images", files)
@@ -83,14 +83,14 @@ test("画像投稿は最大4枚までpayloadに含める", () => {
 })
 
 test("動画投稿はvideoフィールドを使う", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     const payload = twitter.buildBufferPayload("video", [{ type: "video/mp4", url: "https://example.com/v.mp4" }])
 
     assert.deepEqual(payload.assets, { videos: [{ url: "https://example.com/v.mp4" }] })
 })
 
 test("画像と動画の同時投稿はエラーにする", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
 
     assert.throws(
         () => twitter.buildBufferPayload("mixed", [
@@ -101,7 +101,7 @@ test("画像と動画の同時投稿はエラーにする", () => {
 })
 
 test("動画2本以上の同時投稿はエラーにする", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
 
     assert.throws(
         () => twitter.buildBufferPayload("multi video", [
@@ -112,7 +112,7 @@ test("動画2本以上の同時投稿はエラーにする", () => {
 })
 
 test("isMediaFlagが無ければBuffer経由で投稿する", async () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     await twitter.tweet("text only", [])
 
     assert.ok(twitter.lastPayload)
@@ -120,7 +120,7 @@ test("isMediaFlagが無ければBuffer経由で投稿する", async () => {
 })
 
 test("isMediaFlagがあればX API経由で投稿する", async () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     await twitter.tweet("flag media", [{ type: "image/jpeg", url: "https://example.com/1.jpg", flag: "porn" }])
 
     assert.equal(twitter.lastPayload, undefined)
@@ -131,7 +131,7 @@ test("isMediaFlagがあればX API経由で投稿する", async () => {
 })
 
 test("Buffer投稿クエリはchannelIdとimagesを含む", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferChannelId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     const payload = twitter.buildBufferPayload("images", [{ type: "image/jpeg", url: "https://example.com/1.jpg" }])
     const query = twitter.buildBufferMutation(payload)
 
@@ -140,7 +140,7 @@ test("Buffer投稿クエリはchannelIdとimagesを含む", () => {
 })
 
 test("Buffer投稿クエリはテキスト投稿時にschedulingTypeとmodeを含む", () => {
-    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferChannelId")
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
     const payload = twitter.buildBufferPayload("text only", [])
     const query = twitter.buildBufferMutation(payload)
 
