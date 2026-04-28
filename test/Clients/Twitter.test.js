@@ -27,6 +27,22 @@ class MockTwitter extends Twitter {
         return ["mock-media-id"]
     }
 
+    async initializeBufferChannelId() {
+        if (this.useApiChannelResolver) {
+            return super.initializeBufferChannelId()
+        }
+        return "mock-constructor-channel-id"
+    }
+
+    async initializeBufferChannelIdFromApi() {
+        this.useApiChannelResolver = true
+        try {
+            return await super.initializeBufferChannelId()
+        } finally {
+            this.useApiChannelResolver = false
+        }
+    }
+
     setGraphQLResponses(responses) {
         this.mockGraphQLResponses = [...responses]
     }
@@ -153,7 +169,7 @@ test("起動時にBuffer APIからX Channel IDを取得する", async () => {
         }
     ])
 
-    const channelId = await twitter.initializeBufferChannelId()
+    const channelId = await twitter.initializeBufferChannelIdFromApi()
 
     assert.equal(channelId, "ch-twitter")
     assert.equal(twitter.bufferChannelId, "ch-twitter")
@@ -178,7 +194,7 @@ test("起動時にX Channel IDが見つからなければエラーにする", as
     ])
 
     await assert.rejects(
-        twitter.initializeBufferChannelId(),
+        twitter.initializeBufferChannelIdFromApi(),
         /Buffer X channel is not found/
     )
 })
@@ -205,7 +221,7 @@ test("複数Organizationを探索してX Channel IDを取得する", async () =>
         }
     ])
 
-    const channelId = await twitter.initializeBufferChannelId()
+    const channelId = await twitter.initializeBufferChannelIdFromApi()
 
     assert.equal(channelId, "ch-twitter-2")
     assert.deepEqual(twitter.queries[1].variables, { organizationId: "org-1" })

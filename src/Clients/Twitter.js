@@ -14,7 +14,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, _bufferChannelId = undefined) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -26,8 +26,13 @@ class Twitter {
         this.bufferChannelId = undefined
         this.bufferChannelIdError = undefined
         this.bufferChannelIdPromise = this.initializeBufferChannelId()
+            .then((channelId) => {
+                this.bufferChannelId = channelId
+                return channelId
+            })
             .catch((error) => {
                 this.bufferChannelIdError = error
+                console.error('Failed to initialize Buffer channel ID during constructor initialization.', error)
                 return undefined
             })
     }
@@ -192,6 +197,7 @@ query GetChannels($organizationId: String!) {
         if (this.bufferChannelId) return this.bufferChannelId
         if (this.bufferChannelIdPromise) await this.bufferChannelIdPromise
         if (this.bufferChannelIdError) throw this.bufferChannelIdError
+        // サブクラスのテスト実装などで初期化処理を差し替えるケースに備えた保険
         if (!this.bufferChannelId) throw new Error('Buffer channel ID is not initialized')
         return this.bufferChannelId
     }
