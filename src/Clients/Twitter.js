@@ -85,29 +85,28 @@ class Twitter {
 
         const text = JSON.stringify(payload.text)
         const channelId = JSON.stringify(payload.channelId)
-        const schedulingType = payload.schedulingType === 'automatic' ? 'automatic' : 'notification'
-        const mode = payload.mode === 'shareNow' ? 'shareNow' : payload.mode === 'shareNext' ? 'shareNext' : 'addToQueue'
         const inputFields = `
             text: ${text},
             channelId: ${channelId},
-            schedulingType: ${schedulingType},
-            mode: ${mode}
+            schedulingType: ${payload.schedulingType},
+            mode: ${payload.mode}
         `
 
         let assetsField = ''
         if (payload.assets?.images) {
             const images = payload.assets.images.map((image) => `{ url: ${JSON.stringify(image.url)} }`).join(', ')
-            assetsField = `, assets: { images: [${images}] }`
+            assetsField = `assets: { images: [${images}] }`
         } else if (payload.assets?.videos) {
             const videos = payload.assets.videos.map((video) => `{ url: ${JSON.stringify(video.url)} }`).join(', ')
-            assetsField = `, assets: { videos: [${videos}] }`
+            assetsField = `assets: { videos: [${videos}] }`
         }
+        const assetsLine = assetsField ? `,\n    ${assetsField}` : ''
 
         return `
 mutation CreatePost {
   createPost(input: {
     ${inputFields}
-    ${assetsField}
+    ${assetsLine}
   }) {
     __typename
     ... on PostActionSuccess {

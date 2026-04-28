@@ -104,8 +104,8 @@ test("Buffer投稿クエリはchannelIdとimagesを含む", () => {
     const payload = twitter.buildBufferPayload("images", [{ type: "image/jpeg", url: "https://example.com/1.jpg" }])
     const query = twitter.buildBufferMutation(payload)
 
-    assert.match(query, /channelId: "bufferChannelId"/)
-    assert.match(query, /assets: \{ images: \[\{ url: "https:\/\/example\.com\/1\.jpg" \}\] \}/)
+    assert.ok(query.includes('channelId: "bufferChannelId"'))
+    assert.ok(query.includes('assets: { images: [{ url: "https://example.com/1.jpg" }] }'))
 })
 
 test("Buffer投稿クエリはテキスト投稿時にschedulingTypeとmodeを含む", () => {
