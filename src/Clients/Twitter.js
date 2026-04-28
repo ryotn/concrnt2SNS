@@ -85,11 +85,13 @@ class Twitter {
 
         const text = JSON.stringify(payload.text)
         const channelId = JSON.stringify(payload.channelId)
+        const schedulingType = payload.schedulingType === 'automatic' ? 'automatic' : 'notification'
+        const mode = payload.mode === 'shareNow' ? 'shareNow' : payload.mode === 'shareNext' ? 'shareNext' : 'addToQueue'
         const inputFields = `
             text: ${text},
             channelId: ${channelId},
-            schedulingType: ${payload.schedulingType},
-            mode: ${payload.mode}
+            schedulingType: ${schedulingType},
+            mode: ${mode}
         `
 
         let assetsField = ''
@@ -142,7 +144,7 @@ mutation CreatePost {
             const response = await axios(config)
             const result = response.data?.data?.createPost
             if (!result || result.__typename === 'MutationError') {
-                const message = response.data?.errors?.[0]?.message || result?.message || 'Unknown Buffer API error'
+                const message = result?.message || response.data?.errors?.[0]?.message || 'Unknown Buffer API error'
                 throw new Error(message)
             }
         } catch (error) {
