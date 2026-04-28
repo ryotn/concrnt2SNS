@@ -15,7 +15,6 @@ TW_API_KEY_SECRET="TwitterのAPI_KEY_SECRET"
 TW_ACCESS_TOKEN="TwitterのACCESS_TOKEN"
 TW_ACCESS_TOKEN_SECRET="TwitterのACCESS_TOKEN_SECRET"
 TW_BUFFER_ACCESS_TOKEN="BufferのAccess Token"
-TW_BUFFER_CHANNEL_ID="投稿先XアカウントのBuffer Channel ID"
 TW_LISTEN_TIMELINE="Twitterに転送するタイムラインのID、LISTEN_TIMELINEと同じ形式で1つ指定"
 BS_ENABLE="true" or "false"
 BS_IDENTIFIER="BlueskyのIDENTIFIER"
@@ -75,5 +74,5 @@ https://pm2.keymetrics.io/
 ## Twitter投稿のBuffer連携について
 
 Twitter投稿はBuffer API経由で行います。  
-`TW_BUFFER_ACCESS_TOKEN`と`TW_BUFFER_CHANNEL_ID`を設定してください。  
-（互換性のため、`TW_BUFFER_PROFILE_ID`も読み取り対象です）
+`TW_BUFFER_ACCESS_TOKEN`を設定してください。  
+起動時にBuffer APIからServiceがX（twitter）のChannel IDを取得して利用します。

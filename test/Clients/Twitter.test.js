@@ -21,6 +21,16 @@ class MockTwitter extends Twitter {
     async uploadMedia() {
         return ["mock-media-id"]
     }
+
+    setGraphQLResponses(responses) {
+        this.mockGraphQLResponses = [...responses]
+    }
+
+    async requestBufferGraphQL(query) {
+        if (!this.queries) this.queries = []
+        this.queries.push(query)
+        return this.mockGraphQLResponses?.shift()
+    }
 }
 
 test("テキストのみ投稿ではBuffer向けpayloadが生成される", async () => {
@@ -116,4 +126,53 @@ test("Buffer投稿クエリはテキスト投稿時にschedulingTypeとmodeを�
     assert.match(query, /schedulingType: automatic/)
     assert.match(query, /mode: shareNow/)
     assert.doesNotMatch(query, /assets:/)
+})
+
+test("起動時にBuffer APIからXのChannel IDを取得する", async () => {
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
+    twitter.setGraphQLResponses([
+        {
+            data: {
+                account: {
+                    organizations: [{ id: "org-1" }]
+                }
+            }
+        },
+        {
+            data: {
+                channels: [
+                    { id: "ch-facebook", service: "facebook" },
+                    { id: "ch-twitter", service: "twitter" }
+                ]
+            }
+        }
+    ])
+
+    const channelId = await twitter.initializeBufferChannelId()
+
+    assert.equal(channelId, "ch-twitter")
+    assert.equal(twitter.bufferChannelId, "ch-twitter")
+})
+
+test("起動時にXのChannel IDが見つからなければエラーにする", async () => {
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
+    twitter.setGraphQLResponses([
+        {
+            data: {
+                account: {
+                    organizations: [{ id: "org-1" }]
+                }
+            }
+        },
+        {
+            data: {
+                channels: [{ id: "ch-facebook", service: "facebook" }]
+            }
+        }
+    ])
+
+    await assert.rejects(
+        twitter.initializeBufferChannelId(),
+        /Buffer X channel is not found/
+    )
 })

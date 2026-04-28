@@ -22,8 +22,8 @@ class Twitter {
             accessSecret: tokenSecret,
         })
 
-        this.bufferAccessToken = process.env.TW_BUFFER_ACCESS_TOKEN || bufferAccessToken
-        this.bufferChannelId = process.env.TW_BUFFER_CHANNEL_ID || process.env.TW_BUFFER_PROFILE_ID || bufferChannelId
+        this.bufferAccessToken = bufferAccessToken
+        this.bufferChannelId = bufferChannelId
     }
 
     async tweet(text, filesBuffer) {
@@ -122,11 +122,7 @@ mutation CreatePost {
 `.trim()
     }
 
-    async createPost(payload) {
-        if (!this.bufferAccessToken || !this.bufferChannelId) {
-            throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_CHANNEL_ID are required')
-        }
-
+    async requestBufferGraphQL(query) {
         const config = {
             method: 'post',
             url: BUFFER_GRAPHQL_URL,
@@ -134,16 +130,65 @@ mutation CreatePost {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.bufferAccessToken}`
             },
-            data: {
-                query: this.buildBufferMutation(payload)
+            data: { query }
+        }
+        const response = await axios(config)
+        return response.data
+    }
+
+    async initializeBufferChannelId() {
+        if (!this.bufferAccessToken) {
+            throw new Error('TW_BUFFER_ACCESS_TOKEN is required')
+        }
+
+        const organizationsData = await this.requestBufferGraphQL(`
+query GetOrganizations {
+  account {
+    organizations {
+      id
+    }
+  }
+}
+`.trim())
+        const organizations = organizationsData?.data?.account?.organizations ?? []
+
+        for (const organization of organizations) {
+            const organizationId = JSON.stringify(organization.id)
+            const channelsData = await this.requestBufferGraphQL(`
+query GetChannels {
+  channels(input: {
+    organizationId: ${organizationId}
+  }) {
+    id
+    service
+  }
+}
+`.trim())
+
+            const channels = channelsData?.data?.channels ?? []
+            const xChannel = channels.find((channel) => {
+                const service = channel.service?.toLowerCase()
+                return service === 'twitter' || service === 'x'
+            })
+            if (xChannel?.id) {
+                this.bufferChannelId = xChannel.id
+                return this.bufferChannelId
             }
         }
 
+        throw new Error('Buffer X channel is not found')
+    }
+
+    async createPost(payload) {
+        if (!this.bufferAccessToken || !this.bufferChannelId) {
+            throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_CHANNEL_ID are required')
+        }
+
         try {
-            const response = await axios(config)
-            const result = response.data?.data?.createPost
+            const responseData = await this.requestBufferGraphQL(this.buildBufferMutation(payload))
+            const result = responseData?.data?.createPost
             if (!result || result.__typename === 'MutationError') {
-                const message = result?.message || response.data?.errors?.[0]?.message || 'Unknown Buffer API error'
+                const message = result?.message || responseData?.errors?.[0]?.message || 'Unknown Buffer API error'
                 throw new Error(message)
             }
         } catch (error) {
