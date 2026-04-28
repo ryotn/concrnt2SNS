@@ -12,7 +12,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, bufferProfileId) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -20,10 +20,8 @@ class Twitter {
             accessSecret: tokenSecret,
         })
 
-        this.webhookURL = webhookURL
-        this.tweetAtWebHookImage = webhookURLImage
-        this.bufferAccessToken = process.env.TW_BUFFER_ACCESS_TOKEN || webhookURL
-        this.bufferProfileId = process.env.TW_BUFFER_PROFILE_ID || webhookURLImage
+        this.bufferAccessToken = process.env.TW_BUFFER_ACCESS_TOKEN || bufferAccessToken
+        this.bufferProfileId = process.env.TW_BUFFER_PROFILE_ID || bufferProfileId
     }
 
     async tweet(text, filesBuffer) {
@@ -41,7 +39,7 @@ class Twitter {
                 return
             }
 
-            if (filesBuffer.length > 0 || isMediaFlag) {
+            if (filesBuffer.length > 0) {
                 const mediaIds = await this.uploadMedia(filesBuffer)
                 if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
             }
@@ -83,7 +81,7 @@ class Twitter {
             throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_PROFILE_ID are required')
         }
 
-        let config = {
+        const config = {
             method: 'post',
             url: BUFFER_CREATE_POST_URL,
             headers: {
@@ -109,7 +107,7 @@ class Twitter {
             const buffer = file.buffer
             const type = file.type
             const option = { mimeType: type }
-            if (type == "video/mp4") {
+            if (type === "video/mp4") {
                 option.longVideo = true
             }
 
@@ -135,11 +133,11 @@ class Twitter {
     }
 
     async tweetAtWebHook(url, text, imageURL = undefined) {
-        let data = {
+        const data = {
             "value1": text,
             "value2": imageURL
         }
-        let config = {
+        const config = {
             method: 'post',
             url: url,
             headers: {
@@ -151,7 +149,7 @@ class Twitter {
         try {
             await axios(config)
         } catch (error) {
-            const responseStatus = error.response.status
+            const responseStatus = error.response?.status
             console.error(`Failed to tweet on WebHook. code:${responseStatus}`)
             throw error
         }
