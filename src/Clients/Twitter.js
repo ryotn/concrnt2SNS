@@ -4,9 +4,9 @@ const BUFFER_CREATE_POST_URL = 'https://api.bufferapp.com/1/updates/create.json'
 const MAX_IMAGE_POST_COUNT = 4
 
 class Twitter {
-    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage) {
-        this.bufferAccessToken = webhookURL || process.env.TW_BUFFER_ACCESS_TOKEN
-        this.bufferProfileId = webhookURLImage || process.env.TW_BUFFER_PROFILE_ID
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, bufferProfileId) {
+        this.bufferAccessToken = bufferAccessToken || process.env.TW_BUFFER_ACCESS_TOKEN
+        this.bufferProfileId = bufferProfileId || process.env.TW_BUFFER_PROFILE_ID
     }
 
     async tweet(text, filesBuffer) {
@@ -28,8 +28,12 @@ class Twitter {
             now: true
         }
 
-        const images = filesBuffer.filter(file => file.type?.startsWith('image/')).map(file => file.url).filter(Boolean)
-        const videos = filesBuffer.filter(file => file.type?.startsWith('video/')).map(file => file.url).filter(Boolean)
+        const extractMediaUrls = (mediaType) => filesBuffer
+            .filter(file => file.type?.startsWith(mediaType))
+            .map(file => file.url)
+            .filter(Boolean)
+        const images = extractMediaUrls('image/')
+        const videos = extractMediaUrls('video/')
 
         if (videos.length > 1) throw new Error('Buffer does not support multiple videos in one post')
         if (videos.length === 1 && images.length > 0) throw new Error('Buffer does not support mixed image and video posts')

@@ -52,3 +52,14 @@ test("画像と動画の同時投稿はエラーにする", () => {
         ])
     )
 })
+
+test("動画2本以上の同時投稿はエラーにする", () => {
+    const twitter = new MockTwitter("", "", "", "", "token", "profile")
+
+    assert.throws(
+        () => twitter.buildBufferPayload("multi video", [
+            { type: "video/mp4", url: "https://example.com/v1.mp4" },
+            { type: "video/mp4", url: "https://example.com/v2.mp4" }
+        ])
+    )
+})
