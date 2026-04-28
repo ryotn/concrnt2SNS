@@ -122,7 +122,7 @@ mutation CreatePost {
 `.trim()
     }
 
-    async requestBufferGraphQL(query) {
+    async requestBufferGraphQL(query, variables = undefined) {
         const config = {
             method: 'post',
             url: BUFFER_GRAPHQL_URL,
@@ -130,7 +130,7 @@ mutation CreatePost {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.bufferAccessToken}`
             },
-            data: { query }
+            data: { query, variables }
         }
         const response = await axios(config)
         return response.data
@@ -153,17 +153,21 @@ query GetOrganizations {
         const organizations = organizationsData?.data?.account?.organizations ?? []
 
         for (const organization of organizations) {
-            const organizationId = JSON.stringify(organization.id)
+            if (typeof organization?.id !== 'string') continue
+            if (organization.id.length === 0) continue
+
             const channelsData = await this.requestBufferGraphQL(`
-query GetChannels {
+query GetChannels($organizationId: String!) {
   channels(input: {
-    organizationId: ${organizationId}
+    organizationId: $organizationId
   }) {
     id
     service
   }
 }
-`.trim())
+`.trim(), {
+                organizationId: organization.id
+            })
 
             const channels = channelsData?.data?.channels ?? []
             const xChannel = channels.find((channel) => {
