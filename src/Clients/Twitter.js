@@ -4,25 +4,12 @@ import axios from 'axios'
 const BUFFER_GRAPHQL_URL = 'https://api.buffer.com'
 const MAX_IMAGE_POST_COUNT = 4
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+const BUFFER_SCHEDULING_TYPES = new Set(['automatic', 'notification'])
+const BUFFER_MODES = new Set(['addToQueue', 'shareNow', 'shareNext'])
 // コンカレのラベルとTwitterのラベルの対応
 // hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
 // warnはotherにしておく
 const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nude': 'adult_content', 'warn': 'other' }
-const BUFFER_CREATE_POST_MUTATION = `
-mutation CreatePost {
-  createPost(input: __INPUT__) {
-    __typename
-    ... on PostActionSuccess {
-      post {
-        id
-      }
-    }
-    ... on MutationError {
-      message
-    }
-  }
-}
-`
 
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
@@ -93,9 +80,12 @@ class Twitter {
     }
 
     buildBufferMutation(payload) {
+        if (!BUFFER_SCHEDULING_TYPES.has(payload.schedulingType)) throw new Error('Invalid Buffer schedulingType')
+        if (!BUFFER_MODES.has(payload.mode)) throw new Error('Invalid Buffer mode')
+
         const text = JSON.stringify(payload.text)
         const channelId = JSON.stringify(payload.channelId)
-        const commonFields = `
+        const inputFields = `
             text: ${text},
             channelId: ${channelId},
             schedulingType: ${payload.schedulingType},
@@ -111,10 +101,24 @@ class Twitter {
             assetsField = `, assets: { videos: [${videos}] }`
         }
 
-        return BUFFER_CREATE_POST_MUTATION.replace('__INPUT__', `{
-            ${commonFields}
-            ${assetsField}
-        }`)
+        return `
+mutation CreatePost {
+  createPost(input: {
+    ${inputFields}
+    ${assetsField}
+  }) {
+    __typename
+    ... on PostActionSuccess {
+      post {
+        id
+      }
+    }
+    ... on MutationError {
+      message
+    }
+  }
+}
+`.trim()
     }
 
     async createPost(payload) {
@@ -138,7 +142,7 @@ class Twitter {
             const response = await axios(config)
             const result = response.data?.data?.createPost
             if (!result || result.__typename === 'MutationError') {
-                const message = result?.message || response.data?.errors?.[0]?.message || 'Unknown Buffer API error'
+                const message = response.data?.errors?.[0]?.message || result?.message || 'Unknown Buffer API error'
                 throw new Error(message)
             }
         } catch (error) {

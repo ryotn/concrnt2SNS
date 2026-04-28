@@ -107,3 +107,13 @@ test("Buffer投稿クエリはchannelIdとimagesを含む", () => {
     assert.match(query, /channelId: "bufferChannelId"/)
     assert.match(query, /assets: \{ images: \[\{ url: "https:\/\/example\.com\/1\.jpg" \}\] \}/)
 })
+
+test("Buffer投稿クエリはテキスト投稿時にschedulingTypeとmodeを含む", () => {
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferChannelId")
+    const payload = twitter.buildBufferPayload("text only", [])
+    const query = twitter.buildBufferMutation(payload)
+
+    assert.match(query, /schedulingType: automatic/)
+    assert.match(query, /mode: shareNow/)
+    assert.doesNotMatch(query, /assets:/)
+})
