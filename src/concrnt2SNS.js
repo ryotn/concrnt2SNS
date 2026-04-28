@@ -17,7 +17,7 @@ const TW_API_KEY_SECRET = process.env.TW_API_KEY_SECRET
 const TW_ACCESS_TOKEN = process.env.TW_ACCESS_TOKEN
 const TW_ACCESS_TOKEN_SECRET = process.env.TW_ACCESS_TOKEN_SECRET
 const TW_BUFFER_ACCESS_TOKEN = process.env.TW_BUFFER_ACCESS_TOKEN
-const TW_BUFFER_PROFILE_ID = process.env.TW_BUFFER_PROFILE_ID
+const TW_BUFFER_CHANNEL_ID = process.env.TW_BUFFER_CHANNEL_ID || process.env.TW_BUFFER_PROFILE_ID
 const TW_LISTEN_TIMELINE = process.env.TW_LISTEN_TIMELINE
 
 const BS_ENABLE = process.env.BS_ENABLE == "true"
@@ -43,7 +43,7 @@ if (!ccClient) {
     console.error("Failed to create Concrnt client.")
     process.exit(1)
 }
-const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_BUFFER_ACCESS_TOKEN, TW_BUFFER_PROFILE_ID)
+const twitterClient = TW_ENABLE && new Twitter(TW_API_KEY, TW_API_KEY_SECRET, TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_BUFFER_ACCESS_TOKEN, TW_BUFFER_CHANNEL_ID)
 const bskyClient = BS_ENABLE && await AtProtocol.build(BS_SERVICE, BS_IDENTIFIER, BS_APP_PASSWORD)
 const threadsClient = THREADS_ENABLE && await Threads.create(THREADS_ACCESS_TOKEN)
 const nosterClient = NOSTR_ENABLE && new Nostr(NOSTR_RELAYS, NOSTR_PRIVATE_KEY)

@@ -1,18 +1,33 @@
 import { TwitterApi } from 'twitter-api-v2'
 import axios from 'axios'
 
-const BUFFER_CREATE_POST_URL = 'https://api.bufferapp.com/1/updates/create.json'
+const BUFFER_GRAPHQL_URL = 'https://api.buffer.com'
 const MAX_IMAGE_POST_COUNT = 4
 const MAX_MEDIA_UPLOAD_RETRYS = 3
 // コンカレのラベルとTwitterのラベルの対応
 // hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
 // warnはotherにしておく
 const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nude': 'adult_content', 'warn': 'other' }
+const BUFFER_CREATE_POST_MUTATION = `
+mutation CreatePost {
+  createPost(input: __INPUT__) {
+    __typename
+    ... on PostActionSuccess {
+      post {
+        id
+      }
+    }
+    ... on MutationError {
+      message
+    }
+  }
+}
+`
 
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, bufferProfileId) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferAccessToken, bufferChannelId) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -21,7 +36,7 @@ class Twitter {
         })
 
         this.bufferAccessToken = process.env.TW_BUFFER_ACCESS_TOKEN || bufferAccessToken
-        this.bufferProfileId = process.env.TW_BUFFER_PROFILE_ID || bufferProfileId
+        this.bufferChannelId = process.env.TW_BUFFER_CHANNEL_ID || process.env.TW_BUFFER_PROFILE_ID || bufferChannelId
     }
 
     async tweet(text, filesBuffer) {
@@ -53,8 +68,9 @@ class Twitter {
     buildBufferPayload(text, filesBuffer = []) {
         const payload = {
             text: text,
-            profile_ids: [this.bufferProfileId],
-            now: true
+            channelId: this.bufferChannelId,
+            schedulingType: 'automatic',
+            mode: 'shareNow'
         }
 
         const extractMediaUrls = (mediaType) => filesBuffer
@@ -68,31 +84,63 @@ class Twitter {
         if (videos.length === 1 && images.length > 0) throw new Error('Buffer does not support mixed image and video posts')
 
         if (videos.length === 1) {
-            payload.media = { video: videos[0] }
+            payload.assets = { videos: [{ url: videos[0] }] }
         } else if (images.length > 0) {
-            payload.media = { photo: images.slice(0, MAX_IMAGE_POST_COUNT) }
+            payload.assets = { images: images.slice(0, MAX_IMAGE_POST_COUNT).map((url) => ({ url })) }
         }
 
         return payload
     }
 
+    buildBufferMutation(payload) {
+        const text = JSON.stringify(payload.text)
+        const channelId = JSON.stringify(payload.channelId)
+        const commonFields = `
+            text: ${text},
+            channelId: ${channelId},
+            schedulingType: ${payload.schedulingType},
+            mode: ${payload.mode}
+        `
+
+        let assetsField = ''
+        if (payload.assets?.images) {
+            const images = payload.assets.images.map((image) => `{ url: ${JSON.stringify(image.url)} }`).join(', ')
+            assetsField = `, assets: { images: [${images}] }`
+        } else if (payload.assets?.videos) {
+            const videos = payload.assets.videos.map((video) => `{ url: ${JSON.stringify(video.url)} }`).join(', ')
+            assetsField = `, assets: { videos: [${videos}] }`
+        }
+
+        return BUFFER_CREATE_POST_MUTATION.replace('__INPUT__', `{
+            ${commonFields}
+            ${assetsField}
+        }`)
+    }
+
     async createPost(payload) {
-        if (!this.bufferAccessToken || !this.bufferProfileId) {
-            throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_PROFILE_ID are required')
+        if (!this.bufferAccessToken || !this.bufferChannelId) {
+            throw new Error('TW_BUFFER_ACCESS_TOKEN and TW_BUFFER_CHANNEL_ID are required')
         }
 
         const config = {
             method: 'post',
-            url: BUFFER_CREATE_POST_URL,
+            url: BUFFER_GRAPHQL_URL,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.bufferAccessToken}`
             },
-            data: payload
+            data: {
+                query: this.buildBufferMutation(payload)
+            }
         }
 
         try {
-            await axios(config)
+            const response = await axios(config)
+            const result = response.data?.data?.createPost
+            if (!result || result.__typename === 'MutationError') {
+                const message = result?.message || response.data?.errors?.[0]?.message || 'Unknown Buffer API error'
+                throw new Error(message)
+            }
         } catch (error) {
             const responseStatus = error.response?.status
             console.error(`Failed to tweet on Buffer API. code:${responseStatus}`)

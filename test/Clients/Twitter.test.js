@@ -29,8 +29,9 @@ test("テキストのみ投稿ではBuffer向けpayloadが生成される", asyn
 
     assert.deepEqual(twitter.lastPayload, {
         text: "https://youtube.com/watch?v=1",
-        profile_ids: ["bufferProfileId"],
-        now: true
+        channelId: "bufferProfileId",
+        schedulingType: "automatic",
+        mode: "shareNow"
     })
 })
 
@@ -40,12 +41,12 @@ test("画像投稿は最大4枚までpayloadに含める", () => {
 
     const payload = twitter.buildBufferPayload("images", files)
 
-    assert.deepEqual(payload.media, {
-        photo: [
-            "https://example.com/1.jpg",
-            "https://example.com/2.jpg",
-            "https://example.com/3.jpg",
-            "https://example.com/4.jpg"
+    assert.deepEqual(payload.assets, {
+        images: [
+            { url: "https://example.com/1.jpg" },
+            { url: "https://example.com/2.jpg" },
+            { url: "https://example.com/3.jpg" },
+            { url: "https://example.com/4.jpg" }
         ]
     })
 })
@@ -54,7 +55,7 @@ test("動画投稿はvideoフィールドを使う", () => {
     const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferProfileId")
     const payload = twitter.buildBufferPayload("video", [{ type: "video/mp4", url: "https://example.com/v.mp4" }])
 
-    assert.deepEqual(payload.media, { video: "https://example.com/v.mp4" })
+    assert.deepEqual(payload.assets, { videos: [{ url: "https://example.com/v.mp4" }] })
 })
 
 test("画像と動画の同時投稿はエラーにする", () => {
@@ -96,4 +97,13 @@ test("isMediaFlagがあればX API経由で投稿する", async () => {
         text: "flag media",
         media: { media_ids: ["mock-media-id"] }
     })
+})
+
+test("Buffer投稿クエリはchannelIdとimagesを含む", () => {
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken", "bufferChannelId")
+    const payload = twitter.buildBufferPayload("images", [{ type: "image/jpeg", url: "https://example.com/1.jpg" }])
+    const query = twitter.buildBufferMutation(payload)
+
+    assert.match(query, /channelId: "bufferChannelId"/)
+    assert.match(query, /assets: \{ images: \[\{ url: "https:\/\/example\.com\/1\.jpg" \}\] \}/)
 })
