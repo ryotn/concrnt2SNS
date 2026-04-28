@@ -177,3 +177,32 @@ test("起動時にX Channel IDが見つからなければエラーにする", as
         /Buffer X channel is not found/
     )
 })
+
+test("複数Organizationを探索してX Channel IDを取得する", async () => {
+    const twitter = new MockTwitter("apiKey", "apiKeySecret", "token", "tokenSecret", "bufferAccessToken")
+    twitter.setGraphQLResponses([
+        {
+            data: {
+                account: {
+                    organizations: [{ id: "org-1" }, { id: "org-2" }]
+                }
+            }
+        },
+        {
+            data: {
+                channels: [{ id: "ch-facebook", service: "facebook" }]
+            }
+        },
+        {
+            data: {
+                channels: [{ id: "ch-twitter-2", service: "twitter" }]
+            }
+        }
+    ])
+
+    const channelId = await twitter.initializeBufferChannelId()
+
+    assert.equal(channelId, "ch-twitter-2")
+    assert.deepEqual(twitter.queries[1].variables, { organizationId: "org-1" })
+    assert.deepEqual(twitter.queries[2].variables, { organizationId: "org-2" })
+})

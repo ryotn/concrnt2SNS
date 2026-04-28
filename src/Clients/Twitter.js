@@ -154,7 +154,6 @@ query GetOrganizations {
 
         for (const organization of organizations) {
             if (typeof organization?.id !== 'string') continue
-            if (organization.id.length === 0) continue
 
             const channelsData = await this.requestBufferGraphQL(`
 query GetChannels($organizationId: String!) {
