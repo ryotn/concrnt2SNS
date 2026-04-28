@@ -5,10 +5,10 @@ import Twitter from "../../src/Clients/Twitter.js"
 class MockTwitter extends Twitter {
     constructor(...args) {
         super(...args)
-        const presetChannelId = args[5] || "bufferChannelId"
-        this.bufferChannelId = presetChannelId
+        const mockBufferChannelId = args[5] || "bufferChannelId"
+        this.bufferChannelId = mockBufferChannelId
         this.bufferChannelIdError = undefined
-        this.bufferChannelIdPromise = Promise.resolve(presetChannelId)
+        this.bufferChannelIdPromise = Promise.resolve(mockBufferChannelId)
         this.queries = []
         this.twitterClient = {
             v2: {

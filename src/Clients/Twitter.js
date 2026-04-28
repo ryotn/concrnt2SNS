@@ -32,7 +32,7 @@ class Twitter {
             })
             .catch((error) => {
                 this.bufferChannelIdError = error
-                console.error('Failed to initialize Buffer channel ID during constructor initialization.', error)
+                console.error('Failed to initialize Buffer channel ID during constructor initialization. Please check Buffer token and network connectivity.', error)
                 return undefined
             })
     }
@@ -197,7 +197,7 @@ query GetChannels($organizationId: String!) {
         if (this.bufferChannelId) return this.bufferChannelId
         if (this.bufferChannelIdPromise) await this.bufferChannelIdPromise
         if (this.bufferChannelIdError) throw this.bufferChannelIdError
-        // サブクラスのテスト実装などで初期化処理を差し替えるケースに備えた保険
+        // テストでinitializeBufferChannelIdをオーバーライドし、Promise経由の設定を使わない場合のフォールバック
         if (!this.bufferChannelId) throw new Error('Buffer channel ID is not initialized')
         return this.bufferChannelId
     }
