@@ -10,7 +10,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferToken, bufferProfileId) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage, bufferToken, bufferProfileId) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -18,6 +18,8 @@ class Twitter {
             accessSecret: tokenSecret,
         })
 
+        this.webhookURL = webhookURL
+        this.tweetAtWebHookImage = webhookURLImage
         this.bufferToken = bufferToken
         this.bufferProfileId = bufferProfileId
     }
@@ -41,9 +43,15 @@ class Twitter {
                 const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
                 await this.tweetAtBuffer(text, mediaURLs, mediaType)
                 return
+            } else if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+                await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
+                return
             } else if (filesBuffer.length > 0 || isMediaFlag) {
                 const mediaIds = await this.uploadMedia(filesBuffer)
                 if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
+            } else if (this.webhookURL != undefined) {
+                await this.tweetAtWebHook(this.webhookURL, text)
+                return
             }
             
             await this.twitterClient.v2.tweet(payload)
@@ -113,6 +121,29 @@ class Twitter {
         } catch (error) {
             const responseStatus = error.response ? error.response.status : 'unknown'
             console.error(`Failed to tweet via Buffer. code:${responseStatus}`)
+            throw error
+        }
+    }
+
+    async tweetAtWebHook(url, text, imageURL = undefined) {
+        let data = {
+            "value1": text,
+            "value2": imageURL
+        }
+        let config = {
+            method: 'post',
+            url: url,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: data
+        }
+
+        try {
+            await axios(config)
+        } catch (error) {
+            const responseStatus = error.response ? error.response.status : 'unknown'
+            console.error(`Failed to tweet on WebHook. code:${responseStatus}`)
             throw error
         }
     }

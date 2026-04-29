@@ -31,6 +31,8 @@ CC_SUBKEY="コンカレのサブキー"
 LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定、このタイムラインにポストした場合はすべてのSNSに転送される（ただし、各サービスの *_LISTEN_TIMELINE が設定されている場合はそちらが優先されます）"
 
 // Option（使わない場合は入れないこと）
+TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
+TW_WEBHOOK_IMAGE_URL="1枚だけ画像ありのTweetをIFTTT経由で行う場合のWebHookURL"
 BUFFER_ACCESS_TOKEN="Buffer APIのアクセストークン（無料枠でTwitterのAPI制限を回避する場合に使用）"
 BUFFER_TWITTER_PROFILE_ID="Bufferで連携したTwitterアカウントのProfile ID"
 ```
@@ -73,10 +75,28 @@ markdown投稿でdetailsタグを使ったメディアも同様です。
 pm2とかでデーモン化するといいかも  
 https://pm2.keymetrics.io/  
 
+## `TW_WEBHOOK_URL`や`TW_WEBHOOK_IMAGE_URL`について
+
+Twitterの無料APIの制限がキツイので、メディアなしのTweetをIFTTT経由で行えるようにしました。
+IFTTTでこいういうAppletを作ってWebHookのURLを`TW_WEBHOOK_URL`と`TW_WEBHOOK_IMAGE_URL`にセットしてください。
+※IFTTT Pro以上必須です。
+
+### メディアなしのTweet用 (TW_WEBHOOK_URL)
+
+![image](https://github.com/user-attachments/assets/6350bd08-b941-4108-8b13-fda947bdd655)
+![image](https://github.com/user-attachments/assets/3c4b34ca-4412-458a-9342-d0b537f7cc6e)
+
+### 1枚だけ画像ありのTweet用 (TW_WEBHOOK_IMAGE_URL)
+
+![image](https://github.com/user-attachments/assets/6271c892-2db6-4bf5-8c17-f7f7bb56e33c)
+![image](https://github.com/user-attachments/assets/27ed9a51-d20b-4786-b3ac-5354b4aa76c7)
+
+
 ## `BUFFER_ACCESS_TOKEN`や`BUFFER_TWITTER_PROFILE_ID`について
 
 Twitterの無料APIの制限がキツイので、一部のTweetをBuffer経由で無料で行えるようにしました。
 BufferのAPIを使ってTwitterへ投稿することで、Twitter APIの無料枠の制限を回避することができます。
+(IFTTTとBuffer両方の設定がある場合はBufferが優先されます)
 
 Buffer経由で投稿できるのは以下のとおりです：
 - テキストのみ（メディア無し）
