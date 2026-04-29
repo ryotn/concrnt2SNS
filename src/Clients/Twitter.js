@@ -29,16 +29,21 @@ class Twitter {
             text: text
         }
         const isMediaFlag = filesBuffer.some(item => item.flag !== undefined)
+
+        const isImagesOnly = filesBuffer.every(item => item.type && item.type.startsWith('image/'))
+        const isVideoOnly = filesBuffer.length === 1 && filesBuffer[0].type && filesBuffer[0].type.startsWith('video/')
+        const canUseBuffer = this.bufferToken && this.bufferProfileId && !isMediaFlag &&
+            ((isImagesOnly && filesBuffer.length <= 4) || isVideoOnly)
+
         try {
-            if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.bufferToken && this.bufferProfileId && !isMediaFlag) {
-                await this.tweetAtBuffer(text, filesBuffer[0].url)
+            if (canUseBuffer) {
+                const mediaURLs = filesBuffer.map(item => item.url)
+                const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
+                await this.tweetAtBuffer(text, mediaURLs, mediaType)
                 return
             } else if (filesBuffer.length > 0 || isMediaFlag) {
                 const mediaIds = await this.uploadMedia(filesBuffer)
                 if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
-            } else if (this.bufferToken && this.bufferProfileId) {
-                await this.tweetAtBuffer(text)
-                return
             }
             
             await this.twitterClient.v2.tweet(payload)
@@ -79,14 +84,18 @@ class Twitter {
         return ids.filter(v => v)
     }
 
-    async tweetAtBuffer(text, imageURL = undefined) {
+    async tweetAtBuffer(text, mediaURLs = [], mediaType = undefined) {
         let data = new URLSearchParams()
         data.append('text', text)
         data.append('profile_ids[]', this.bufferProfileId)
         data.append('now', 'true')
 
-        if (imageURL) {
-            data.append('media[photo]', imageURL)
+        if (mediaType === 'image') {
+            mediaURLs.forEach(url => {
+                data.append('media[photo][]', url)
+            })
+        } else if (mediaType === 'video' && mediaURLs.length > 0) {
+            data.append('media[video]', mediaURLs[0])
         }
 
         let config = {

@@ -75,12 +75,17 @@ https://pm2.keymetrics.io/
 
 ## `BUFFER_ACCESS_TOKEN`や`BUFFER_TWITTER_PROFILE_ID`について
 
-Twitterの無料APIの制限がキツイので、メディアなしのTweet、もしくは画像1枚だけのTweetをBuffer経由で無料で行えるようにしました。
+Twitterの無料APIの制限がキツイので、一部のTweetをBuffer経由で無料で行えるようにしました。
 BufferのAPIを使ってTwitterへ投稿することで、Twitter APIの無料枠の制限を回避することができます。
+
+Buffer経由で投稿できるのは以下のとおりです：
+- テキストのみ（メディア無し）
+- 画像付き（4つまで）
+- 動画付き（1つまで）
 
 利用するには以下の設定を行ってください：
 1. [Buffer](https://buffer.com/) に登録し、Twitterアカウントを連携させます。
 2. [Bufferのデベロッパーページ](https://buffer.com/developers/apps) でアプリを作成し、`Access Token`を取得します。（これを `BUFFER_ACCESS_TOKEN` に設定します）
 3. [BufferのAPI](https://buffer.com/developers/api/profiles) などを叩いて、登録したTwitterアカウントの `Profile ID` を取得します。（これを `BUFFER_TWITTER_PROFILE_ID` に設定します）
 
-※メディアが2枚以上の場合や動画、フラグ付きメディアの場合は自動的に通常のTwitter API経由での投稿（制限にカウントされる）にフォールバックされます。
+※フラグ付きメディアの場合や、画像が5枚以上の場合、画像と動画が混在している場合は自動的に通常のTwitter API経由での投稿（制限にカウントされる）にフォールバックされます。
