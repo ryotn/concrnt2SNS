@@ -1,5 +1,4 @@
 import { TwitterApi } from 'twitter-api-v2'
-import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
 // コンカレのラベルとTwitterのラベルの対応
@@ -120,24 +119,35 @@ class Twitter {
           }
         }`
 
-        let config = {
-            method: 'post',
-            url: 'https://api.buffer.com',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.bufferToken}`
-            },
-            data: { query: query }
-        }
-
         try {
-            const response = await axios(config)
+            const res = await fetch('https://api.buffer.com', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.bufferToken}`
+                },
+                body: JSON.stringify({ query: query })
+            })
+
+            let responseData
+            try {
+                responseData = await res.json()
+            } catch (e) {
+                responseData = await res.text()
+            }
+
+            if (!res.ok) {
+                const error = new Error(`Request failed with status ${res.status}`)
+                error.response = { status: res.status, data: responseData }
+                throw error
+            }
+
             // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
-            if (response.data && response.data.errors) {
-                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, response.data.errors)
-            } else if (response.data && response.data.data && response.data.data.createPost && response.data.data.createPost.message) {
+            if (responseData && responseData.errors) {
+                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, responseData.errors)
+            } else if (responseData && responseData.data && responseData.data.createPost && responseData.data.createPost.message) {
                 // ... on MutationError returns a message inside the data
-                console.error(`Failed to tweet via Buffer. MutationError:`, response.data.data.createPost.message)
+                console.error(`Failed to tweet via Buffer. MutationError:`, responseData.data.createPost.message)
             }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
@@ -151,17 +161,26 @@ class Twitter {
             "value1": text,
             "value2": imageURL
         }
-        let config = {
-            method: 'post',
-            url: url,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            data: data
-        }
-
         try {
-            await axios(config)
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+
+            if (!res.ok) {
+                let responseData
+                try {
+                    responseData = await res.json()
+                } catch (e) {
+                    responseData = await res.text()
+                }
+                const error = new Error(`Request failed with status ${res.status}`)
+                error.response = { status: res.status, data: responseData }
+                throw error
+            }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
             console.error(`Failed to tweet on WebHook. status: ${responseStatus}`, error.response?.data || "")

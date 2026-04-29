@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { readFile, writeFile } from 'fs/promises';
 
 class Threads {
@@ -51,7 +50,7 @@ class Threads {
 
     static async getTokenInfo(accessToken) {
         try {
-            const response = await axios.get(
+            const res = await fetch(
                 `https://graph.threads.net/${Threads.graphApiVersion}/debug_token?access_token=${accessToken}&input_token=${accessToken}`,
                 {
                     headers: {
@@ -59,8 +58,10 @@ class Threads {
                     },
                 }
             );
-            console.log('アクセストークン情報:', response.data.data);
-            return response.data.data;
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            const data = await res.json();
+            console.log('アクセストークン情報:', data.data);
+            return data.data;
         } catch (error) {
             console.error('アクセストークンの情報取得に失敗しました:', true, error.message);
             return { is_valid: false };
@@ -69,7 +70,7 @@ class Threads {
 
     static async getRefreshToken(accessToken) {
         try {
-            const response = await axios.get(
+            const res = await fetch(
                 `https://graph.threads.net/${Threads.graphApiVersion}/refresh_access_token?grant_type=th_refresh_token&access_token=${accessToken}`,
                 {
                     headers: {
@@ -77,10 +78,12 @@ class Threads {
                     },
                 }
             );
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            const data = await res.json();
             return {
-                "access_token": response.data.access_token,
-                "token_type": response.data.token_type,
-                "expires_at": Date.now() + (response.data.expires_in * 1000)
+                "access_token": data.access_token,
+                "token_type": data.token_type,
+                "expires_at": Date.now() + (data.expires_in * 1000)
             };
         } catch (error) {
             console.error('アクセストークンの更新に失敗しました:', true, error.message);
@@ -207,12 +210,20 @@ class Threads {
 
     async createContainer(data) {
         try {
-            const response = await axios.post(
+            const res = await fetch(
                 this.CREATE_CONTAINER_URL,
-                data,
-                this.HEADERS
+                {
+                    method: 'POST',
+                    headers: {
+                        ...this.HEADERS.headers,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }
             );
-            return response.data.id;
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            const responseData = await res.json();
+            return responseData.id;
         } catch (error) {
             console.error('コンテナの作成に失敗しました:', error.message);
         }
@@ -220,11 +231,13 @@ class Threads {
 
     async getContainerStatus(id) {
         try {
-            const response = await axios.get(
+            const res = await fetch(
                 `${this.CONTAINER_STATUS_URL}${id}?fields=status`,
                 this.HEADERS
             );
-            return response.data.status === 'PUBLISHED' || response.data.status === 'FINISHED'
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+            const responseData = await res.json();
+            return responseData.status === 'PUBLISHED' || responseData.status === 'FINISHED'
         } catch (error) {
             console.error('コンテナのステータス取得に失敗しました:', error.message);
         }
@@ -232,13 +245,20 @@ class Threads {
 
     async publishContainer(containerId) {
         try {
-            await axios.post(
+            const res = await fetch(
                 this.PUBLISH_URL,
                 {
-                    creation_id: containerId,
-                },
-                this.HEADERS
+                    method: 'POST',
+                    headers: {
+                        ...this.HEADERS.headers,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        creation_id: containerId,
+                    })
+                }
             );
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
         } catch (error) {
             console.error('コンテナの公開に失敗しました:', error.message);
         }

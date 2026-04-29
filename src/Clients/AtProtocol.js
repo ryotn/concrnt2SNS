@@ -1,6 +1,5 @@
 import { BskyAgent, RichText } from '@atproto/api'
 import OgImage from '../Utils/OgImage.js'
-import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
 // コンカレのラベルとBSのラベルの対応
@@ -227,14 +226,14 @@ class AtProtocol {
 
         const token = authResult.token
 
-        const res = await axios.get('https://video.bsky.app/xrpc/app.bsky.video.getUploadLimits', {
-            'headers': {
+        const res = await fetch('https://video.bsky.app/xrpc/app.bsky.video.getUploadLimits', {
+            headers: {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${token}`
             }
         })
 
-        return res.data
+        return await res.json()
     }*/
 
     async getVideoJobStatus(jobId) {
@@ -249,14 +248,16 @@ class AtProtocol {
         const token = authResult.token
 
         try {
-            const res = await axios.get(`https://video.bsky.app/xrpc/app.bsky.video.getJobStatus?jobId=${jobId}`, {
-                'headers': {
+            const res = await fetch(`https://video.bsky.app/xrpc/app.bsky.video.getJobStatus?jobId=${jobId}`, {
+                headers: {
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${token}`
                 }
             })
 
-            return res.data
+            if (!res.ok) throw new Error(`Request failed with status ${res.status}`)
+
+            return await res.json()
         } catch (error) {
             console.log(error)
             return { jobId: "" }
@@ -272,21 +273,30 @@ class AtProtocol {
             const authResult = await this.getServiceAuth(this.aud, 'com.atproto.repo.uploadBlob')
             const token = authResult.token
 
-            let config = {
-                method: 'post',
-                maxBodyLength: Infinity,
-                url: `https://video.bsky.app/xrpc/app.bsky.video.uploadVideo?did=${did}&name=${name}`,
-                headers: {
-                    'Content-Type': 'video/mp4',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                data: data
-            }
-
             try {
-                const res = await axios(config)
-                return res.data
+                const res = await fetch(`https://video.bsky.app/xrpc/app.bsky.video.uploadVideo?did=${did}&name=${name}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'video/mp4',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: data
+                })
+
+                if (!res.ok) {
+                    let responseData
+                    try {
+                        responseData = await res.json()
+                    } catch (e) {
+                        responseData = await res.text()
+                    }
+                    const error = new Error(`Request failed with status ${res.status}`)
+                    error.response = { status: res.status, data: responseData }
+                    throw error
+                }
+
+                return await res.json()
             } catch (error) {
                 const responseStatus = error.response?.status
                 const responseData = error.response?.data

@@ -249,7 +249,7 @@ record.facets = rt.facets;
 ## 依存関係
 
 - `@atproto/api` - AT Protocol クライアント
-- `axios` - HTTP リクエスト（動画アップロード用）
+- `fetch API` - HTTP リクエスト（動画アップロード用）
 - `OgImage` - OGP画像取得
 
 ## 使用例

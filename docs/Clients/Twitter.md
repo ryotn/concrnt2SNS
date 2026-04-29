@@ -180,7 +180,7 @@ await twitterClient.tweet('画像付きツイート', filesBuffer);
 ## 依存関係
 
 - `twitter-api-v2` - Twitter API v2 クライアント
-- `axios` - HTTP リクエスト（WebHook用）
+- `fetch API` - HTTP リクエスト（WebHook用）
 
 ## 使用例
 

@@ -148,7 +148,7 @@ const GOOGLE_FAVICON_URL = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=
 ## 依存関係
 
 - `sharp` - 画像処理
-- `axios` - HTTP リクエスト
+- `fetch API` - HTTP リクエスト
 - `MetaTagExtractor` - メタ情報抽出
 
 ## 使用例
