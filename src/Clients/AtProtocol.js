@@ -284,19 +284,23 @@ class AtProtocol {
                     body: data
                 })
 
-                if (!res.ok) {
-                    let responseData
+                const responseText = await res.text()
+                let responseData = responseText
+                if (responseText) {
                     try {
-                        responseData = await res.json()
+                        responseData = JSON.parse(responseText)
                     } catch (e) {
-                        responseData = await res.text()
+                        responseData = responseText
                     }
+                }
+
+                if (!res.ok) {
                     const error = new Error(`Request failed with status ${res.status}`)
                     error.response = { status: res.status, data: responseData }
                     throw error
                 }
 
-                return await res.json()
+                return responseData
             } catch (error) {
                 const responseStatus = error.response?.status
                 const responseData = error.response?.data

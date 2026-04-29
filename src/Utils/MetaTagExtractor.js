@@ -20,7 +20,7 @@ class MetaTagExtractor {
   async extractMeta(url, options = {}) {
     let timeoutId;
     try {
-      const timeout = options.timeout || 10000;
+      const timeout = options.timeout ?? 10000;
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), timeout);
 

@@ -129,11 +129,14 @@ class Twitter {
                 body: JSON.stringify({ query: query })
             })
 
-            let responseData
-            try {
-                responseData = await res.json()
-            } catch (e) {
-                responseData = await res.text()
+            const responseText = await res.text()
+            let responseData = responseText
+            if (responseText) {
+                try {
+                    responseData = JSON.parse(responseText)
+                } catch (e) {
+                    responseData = responseText
+                }
             }
 
             if (!res.ok) {
@@ -171,11 +174,14 @@ class Twitter {
             })
 
             if (!res.ok) {
-                let responseData
-                try {
-                    responseData = await res.json()
-                } catch (e) {
-                    responseData = await res.text()
+                const responseText = await res.text()
+                let responseData = responseText
+                if (responseText) {
+                    try {
+                        responseData = JSON.parse(responseText)
+                    } catch (e) {
+                        responseData = responseText
+                    }
                 }
                 const error = new Error(`Request failed with status ${res.status}`)
                 error.response = { status: res.status, data: responseData }
