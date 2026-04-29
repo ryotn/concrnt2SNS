@@ -34,7 +34,7 @@ LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合は
 TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
 TW_WEBHOOK_IMAGE_URL="1枚だけ画像ありのTweetをIFTTT経由で行う場合のWebHookURL"
 BUFFER_ACCESS_TOKEN="Buffer APIのアクセストークン（無料枠でTwitterのAPI制限を回避する場合に使用）"
-BUFFER_TWITTER_PROFILE_ID="Bufferで連携したTwitterアカウントのProfile ID"
+BUFFER_TWITTER_CHANNEL_ID="Bufferで連携したTwitterアカウントのChannel ID"
 ```
 
 4. `npm start`で多分動く！！
@@ -92,7 +92,7 @@ IFTTTでこいういうAppletを作ってWebHookのURLを`TW_WEBHOOK_URL`と`TW_
 ![image](https://github.com/user-attachments/assets/27ed9a51-d20b-4786-b3ac-5354b4aa76c7)
 
 
-## `BUFFER_ACCESS_TOKEN`や`BUFFER_TWITTER_PROFILE_ID`について
+## `BUFFER_ACCESS_TOKEN`や`BUFFER_TWITTER_CHANNEL_ID`について
 
 Twitterの無料APIの制限がキツイので、一部のTweetをBuffer経由で無料で行えるようにしました。
 BufferのAPIを使ってTwitterへ投稿することで、Twitter APIの無料枠の制限を回避することができます。
@@ -105,7 +105,7 @@ Buffer経由で投稿できるのは以下のとおりです：
 
 利用するには以下の設定を行ってください：
 1. [Buffer](https://buffer.com/) に登録し、Twitterアカウントを連携させます。
-2. [Bufferのデベロッパーページ](https://buffer.com/developers/apps) でアプリを作成し、`Access Token`を取得します。（これを `BUFFER_ACCESS_TOKEN` に設定します）
-3. [BufferのAPI](https://buffer.com/developers/api/profiles) などを叩いて、登録したTwitterアカウントの `Profile ID` を取得します。（これを `BUFFER_TWITTER_PROFILE_ID` に設定します）
+2. [Buffer Publishing (API設定ページ)](https://publish.buffer.com/settings/api) などからデベロッパー設定を開き、`Access Token`を取得します。（これを `BUFFER_ACCESS_TOKEN` に設定します）
+3. GraphQL APIのExplorer（https://developers.buffer.com/explorer.html） などから `channels` クエリを叩いて、登録したTwitterアカウントの `Channel ID` を取得します。（これを `BUFFER_TWITTER_CHANNEL_ID` に設定します）
 
 ※フラグ付きメディアの場合や、画像が5枚以上の場合、画像と動画が混在している場合は自動的に通常のTwitter API経由での投稿（制限にカウントされる）にフォールバックされます。

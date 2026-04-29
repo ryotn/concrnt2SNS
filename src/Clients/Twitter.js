@@ -10,7 +10,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage, bufferToken, bufferProfileId) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage, bufferToken, bufferChannelId) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -21,7 +21,7 @@ class Twitter {
         this.webhookURL = webhookURL
         this.tweetAtWebHookImage = webhookURLImage
         this.bufferToken = bufferToken
-        this.bufferProfileId = bufferProfileId
+        this.bufferChannelId = bufferChannelId
     }
 
     async tweet(text, filesBuffer) {
@@ -34,7 +34,7 @@ class Twitter {
 
         const isImagesOnly = filesBuffer.every(item => item.type && item.type.startsWith('image/'))
         const isVideoOnly = filesBuffer.length === 1 && filesBuffer[0].type && filesBuffer[0].type.startsWith('video/')
-        const canUseBuffer = this.bufferToken && this.bufferProfileId && !isMediaFlag &&
+        const canUseBuffer = this.bufferToken && this.bufferChannelId && !isMediaFlag &&
             ((isImagesOnly && filesBuffer.length <= 4) || isVideoOnly)
 
         try {
@@ -93,31 +93,52 @@ class Twitter {
     }
 
     async tweetAtBuffer(text, mediaURLs = [], mediaType = undefined) {
-        let data = new URLSearchParams()
-        data.append('text', text)
-        data.append('profile_ids[]', this.bufferProfileId)
-        data.append('now', 'true')
-
-        if (mediaType === 'image') {
-            mediaURLs.forEach(url => {
-                data.append('media[photo][]', url)
-            })
+        let assets = ""
+        if (mediaType === 'image' && mediaURLs.length > 0) {
+            const imagesMap = mediaURLs.map(url => `{ url: "${url}" }`).join(", ")
+            assets = `assets: { images: [${imagesMap}] }`
         } else if (mediaType === 'video' && mediaURLs.length > 0) {
-            data.append('media[video]', mediaURLs[0])
+            assets = `assets: { videos: [{ url: "${mediaURLs[0]}" }] }`
         }
+
+        // text must be properly escaped for graphql string literal
+        const escapedText = JSON.stringify(text)
+
+        const query = `
+        mutation CreatePost {
+          createPost(input: {
+            text: ${escapedText},
+            channelId: "${this.bufferChannelId}",
+            schedulingType: automatic,
+            mode: addToQueue
+            ${assets}
+          }) {
+            ... on PostActionSuccess {
+              post { id }
+            }
+            ... on MutationError { message }
+          }
+        }`
 
         let config = {
             method: 'post',
-            url: 'https://api.bufferapp.com/1/updates/create.json',
+            url: 'https://api.buffer.com',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.bufferToken}`
             },
-            data: data.toString()
+            data: { query: query }
         }
 
         try {
-            await axios(config)
+            const response = await axios(config)
+            // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
+            if (response.data && response.data.errors) {
+                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, response.data.errors)
+            } else if (response.data && response.data.data && response.data.data.createPost && response.data.data.createPost.message) {
+                // ... on MutationError returns a message inside the data
+                console.error(`Failed to tweet via Buffer. MutationError:`, response.data.data.createPost.message)
+            }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
             console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
