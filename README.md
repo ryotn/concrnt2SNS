@@ -31,8 +31,8 @@ CC_SUBKEY="コンカレのサブキー"
 LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定、このタイムラインにポストした場合はすべてのSNSに転送される（ただし、各サービスの *_LISTEN_TIMELINE が設定されている場合はそちらが優先されます）"
 
 // Option（使わない場合は入れないこと）
-TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
-TW_WEBHOOK_IMAGE_URL="1枚だけ画像ありのTweetをIFTTT経由で行う場合のWebHookURL"
+BUFFER_ACCESS_TOKEN="Buffer APIのアクセストークン（無料枠でTwitterのAPI制限を回避する場合に使用）"
+BUFFER_TWITTER_PROFILE_ID="Bufferで連携したTwitterアカウントのProfile ID"
 ```
 
 4. `npm start`で多分動く！！
@@ -73,18 +73,14 @@ markdown投稿でdetailsタグを使ったメディアも同様です。
 pm2とかでデーモン化するといいかも  
 https://pm2.keymetrics.io/  
 
-## `TW_WEBHOOK_URL`や`TW_WEBHOOK_IMAGE_URL`について
+## `BUFFER_ACCESS_TOKEN`や`BUFFER_TWITTER_PROFILE_ID`について
 
-Twitterの無料APIの制限がキツイので、メディアなしのTweetをIFTTT経由で行えるようにしました。  
-IFTTTでこいういうAppletを作ってWebHookのURLを`TW_WEBHOOK_URL`と`TW_WEBHOOK_IMAGE_URL`にセットしてください。  
-※IFTTT Pro以上必須です。
+Twitterの無料APIの制限がキツイので、メディアなしのTweet、もしくは画像1枚だけのTweetをBuffer経由で無料で行えるようにしました。
+BufferのAPIを使ってTwitterへ投稿することで、Twitter APIの無料枠の制限を回避することができます。
 
-### メディアなしのTweet用 (TW_WEBHOOK_URL)
+利用するには以下の設定を行ってください：
+1. [Buffer](https://buffer.com/) に登録し、Twitterアカウントを連携させます。
+2. [Bufferのデベロッパーページ](https://buffer.com/developers/apps) でアプリを作成し、`Access Token`を取得します。（これを `BUFFER_ACCESS_TOKEN` に設定します）
+3. [BufferのAPI](https://buffer.com/developers/api/profiles) などを叩いて、登録したTwitterアカウントの `Profile ID` を取得します。（これを `BUFFER_TWITTER_PROFILE_ID` に設定します）
 
-![image](https://github.com/user-attachments/assets/6350bd08-b941-4108-8b13-fda947bdd655)
-![image](https://github.com/user-attachments/assets/3c4b34ca-4412-458a-9342-d0b537f7cc6e)
-
-### 1枚だけ画像ありのTweet用 (TW_WEBHOOK_IMAGE_URL)
-
-![image](https://github.com/user-attachments/assets/6271c892-2db6-4bf5-8c17-f7f7bb56e33c)
-![image](https://github.com/user-attachments/assets/27ed9a51-d20b-4786-b3ac-5354b4aa76c7)
+※メディアが2枚以上の場合や動画、フラグ付きメディアの場合は自動的に通常のTwitter API経由での投稿（制限にカウントされる）にフォールバックされます。

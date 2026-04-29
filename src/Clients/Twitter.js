@@ -10,7 +10,7 @@ const WARNING_LABEL = { 'porn': 'adult_content', 'hard': 'graphic_violence', 'nu
 class Twitter {
     sleep = (time) => new Promise((resolve) => setTimeout(resolve, time))
 
-    constructor(apiKey, apiKeySecret, token, tokenSecret, webhookURL, webhookURLImage) {
+    constructor(apiKey, apiKeySecret, token, tokenSecret, bufferToken, bufferProfileId) {
         this.twitterClient = new TwitterApi({
             appKey: apiKey,
             appSecret: apiKeySecret,
@@ -18,8 +18,8 @@ class Twitter {
             accessSecret: tokenSecret,
         })
 
-        this.webhookURL = webhookURL
-        this.tweetAtWebHookImage = webhookURLImage
+        this.bufferToken = bufferToken
+        this.bufferProfileId = bufferProfileId
     }
 
     async tweet(text, filesBuffer) {
@@ -30,14 +30,14 @@ class Twitter {
         }
         const isMediaFlag = filesBuffer.some(item => item.flag !== undefined)
         try {
-            if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
-                await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
+            if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.bufferToken && this.bufferProfileId && !isMediaFlag) {
+                await this.tweetAtBuffer(text, filesBuffer[0].url)
                 return
             } else if (filesBuffer.length > 0 || isMediaFlag) {
                 const mediaIds = await this.uploadMedia(filesBuffer)
                 if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
-            } else if (this.webhookURL != undefined) {
-                await this.tweetAtWebHook(this.webhookURL, text)
+            } else if (this.bufferToken && this.bufferProfileId) {
+                await this.tweetAtBuffer(text)
                 return
             }
             
@@ -79,25 +79,31 @@ class Twitter {
         return ids.filter(v => v)
     }
 
-    async tweetAtWebHook(url, text, imageURL = undefined) {
-        let data = {
-            "value1": text,
-            "value2": imageURL
+    async tweetAtBuffer(text, imageURL = undefined) {
+        let data = new URLSearchParams()
+        data.append('text', text)
+        data.append('profile_ids[]', this.bufferProfileId)
+        data.append('now', 'true')
+
+        if (imageURL) {
+            data.append('media[photo]', imageURL)
         }
+
         let config = {
             method: 'post',
-            url: url,
+            url: 'https://api.bufferapp.com/1/updates/create.json',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Bearer ${this.bufferToken}`
             },
-            data: data
+            data: data.toString()
         }
 
         try {
             await axios(config)
         } catch (error) {
-            const responseStatus = error.response.status
-            console.error(`Failed to tweet on WebHook. code:${responseStatus}`)
+            const responseStatus = error.response ? error.response.status : 'unknown'
+            console.error(`Failed to tweet via Buffer. code:${responseStatus}`)
             throw error
         }
     }
