@@ -119,8 +119,8 @@ class Twitter {
         try {
             await axios(config)
         } catch (error) {
-            const responseStatus = error.response ? error.response.status : 'unknown'
-            console.error(`Failed to tweet via Buffer. code:${responseStatus}`)
+            const responseStatus = error.response ? error.response.status : error.message
+            console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
             throw error
         }
     }
@@ -142,8 +142,8 @@ class Twitter {
         try {
             await axios(config)
         } catch (error) {
-            const responseStatus = error.response ? error.response.status : 'unknown'
-            console.error(`Failed to tweet on WebHook. code:${responseStatus}`)
+            const responseStatus = error.response ? error.response.status : error.message
+            console.error(`Failed to tweet on WebHook. status: ${responseStatus}`, error.response?.data || "")
             throw error
         }
     }
