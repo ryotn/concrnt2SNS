@@ -110,7 +110,7 @@ class Twitter {
             text: ${escapedText},
             channelId: "${this.bufferChannelId}",
             schedulingType: automatic,
-            mode: addToQueue
+            mode: shareNow
             ${assets}
           }) {
             ... on PostActionSuccess {
