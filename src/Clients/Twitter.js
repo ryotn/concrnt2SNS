@@ -2,6 +2,7 @@ import { TwitterApi } from 'twitter-api-v2'
 import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+const MAX_BUFFER_RETRYS = 3
 // コンカレのラベルとTwitterのラベルの対応
 // hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
 // warnはotherにしておく
@@ -130,20 +131,34 @@ class Twitter {
             data: { query: query }
         }
 
-        try {
-            const response = await axios(config)
-            // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
-            if (response.data && response.data.errors) {
-                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, response.data.errors)
-            } else if (response.data && response.data.data && response.data.data.createPost && response.data.data.createPost.message) {
-                // ... on MutationError returns a message inside the data
-                console.error(`Failed to tweet via Buffer. MutationError:`, response.data.data.createPost.message)
+        let retryCount = 0
+        while (retryCount < MAX_BUFFER_RETRYS) {
+            try {
+                const response = await axios(config)
+                // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
+                if (response.data && response.data.errors) {
+                    console.error(`Failed to tweet via Buffer. GraphQL Errors:`, response.data.errors)
+                } else if (response.data && response.data.data && response.data.data.createPost && response.data.data.createPost.message) {
+                    // ... on MutationError returns a message inside the data
+                    console.error(`Failed to tweet via Buffer. MutationError:`, response.data.data.createPost.message)
+                } else {
+                    return
+                }
+            } catch (error) {
+                const responseStatus = error.response ? error.response.status : error.message
+                console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
+                // Don't retry client errors (4xx) except rate limiting (429)
+                if (error.response && error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
+                    return
+                }
             }
-        } catch (error) {
-            const responseStatus = error.response ? error.response.status : error.message
-            console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
-            throw error
+            retryCount++
+            console.error(`Retry tweetAtBuffer. retryCount:${retryCount}`)
+            if (retryCount < MAX_BUFFER_RETRYS) {
+                await this.sleep(1000)
+            }
         }
+        console.error(`Failed to tweet via Buffer. Max retries (${MAX_BUFFER_RETRYS}) exceeded.`)
     }
 
     async tweetAtWebHook(url, text, imageURL = undefined) {
