@@ -1,5 +1,4 @@
 import { TwitterApi } from 'twitter-api-v2'
-import axios from 'axios'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
 const MAX_BUFFER_RETRYS = 3
@@ -121,36 +120,46 @@ class Twitter {
           }
         }`
 
-        let config = {
-            method: 'post',
-            url: 'https://api.buffer.com',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.bufferToken}`
-            },
-            data: { query: query }
-        }
-
         let retryCount = 0
         while (retryCount < MAX_BUFFER_RETRYS) {
             try {
-                const response = await axios(config)
+                const res = await fetch('https://api.buffer.com', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${this.bufferToken}`
+                    },
+                    body: JSON.stringify({ query: query })
+                })
+
+                const responseText = await res.text()
+                let responseData = responseText
+                if (responseText) {
+                    try {
+                        responseData = JSON.parse(responseText)
+                    } catch (e) {
+                        responseData = responseText
+                    }
+                }
+
+                if (!res.ok) {
+                    // Don't retry client errors (4xx) except rate limiting (429)
+                    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+                        console.error(`Failed to tweet via Buffer. status: ${res.status}`, responseData)
+                        return
+                    }
+                    console.error(`Failed to tweet via Buffer. status: ${res.status}`, responseData)
                 // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
-                if (response.data && response.data.errors) {
-                    console.error(`Failed to tweet via Buffer. GraphQL Errors:`, response.data.errors)
-                } else if (response.data && response.data.data && response.data.data.createPost && response.data.data.createPost.message) {
+                } else if (responseData && responseData.errors) {
+                    console.error(`Failed to tweet via Buffer. GraphQL Errors:`, responseData.errors)
+                } else if (responseData && responseData.data && responseData.data.createPost && responseData.data.createPost.message) {
                     // ... on MutationError returns a message inside the data
-                    console.error(`Failed to tweet via Buffer. MutationError:`, response.data.data.createPost.message)
+                    console.error(`Failed to tweet via Buffer. MutationError:`, responseData.data.createPost.message)
                 } else {
                     return
                 }
             } catch (error) {
-                const responseStatus = error.response ? error.response.status : error.message
-                console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
-                // Don't retry client errors (4xx) except rate limiting (429)
-                if (error.response && error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
-                    return
-                }
+                console.error(`Failed to tweet via Buffer.`, error.message)
             }
             retryCount++
             console.error(`Retry tweetAtBuffer. retryCount:${retryCount}`)
@@ -166,17 +175,29 @@ class Twitter {
             "value1": text,
             "value2": imageURL
         }
-        let config = {
-            method: 'post',
-            url: url,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            data: data
-        }
-
         try {
-            await axios(config)
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+
+            if (!res.ok) {
+                const responseText = await res.text()
+                let responseData = responseText
+                if (responseText) {
+                    try {
+                        responseData = JSON.parse(responseText)
+                    } catch (e) {
+                        responseData = responseText
+                    }
+                }
+                const error = new Error(`Request failed with status ${res.status}`)
+                error.response = { status: res.status, data: responseData }
+                throw error
+            }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
             console.error(`Failed to tweet on WebHook. status: ${responseStatus}`, error.response?.data || "")
