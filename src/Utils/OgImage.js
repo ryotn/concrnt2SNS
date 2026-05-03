@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import axios from 'axios';
 import MetaTagExtractor from './MetaTagExtractor.js';
 
 const GOOGLE_FAVICON_URL = "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=256&url="
@@ -52,7 +51,9 @@ class OgImage {
     if (ccClient && "world.concrnt.hyperproxy.summary" in ccClient?.domainServices) {
       const summaryUrl = `https://${ccClient.host}${ccClient.domainServices['world.concrnt.hyperproxy.summary'].path}?url=${encodeURIComponent(url)}`
       try {
-        const { data } = await axios.get(summaryUrl)
+        const res = await fetch(summaryUrl)
+        if (!res.ok) throw new Error(`Request failed with status ${res.status}`)
+        const data = await res.json()
         if (data.thumbnail) { // thumbnailがあれば使う
           ogImageUrl = data.thumbnail
         } else if (data.icon.endsWith(".ico")) {  // faviconがico形式の場合は、GoogleのFavicon取得APIを使う

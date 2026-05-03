@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 /**
@@ -15,22 +14,32 @@ class MetaTagExtractor {
   /**
    * 指定されたURLからメタ情報を抽出
    * @param {string} url - 対象のURL
-   * @param {object} options - axiosのオプション (timeout, headers など)
+   * @param {object} options - fetchのオプション (timeout, headers など)
    * @returns {Promise<object>} メタ情報オブジェクト
    */
   async extractMeta(url, options = {}) {
+    let timeoutId;
     try {
+      const timeout = options.timeout ?? 10000;
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      // fetch では maxRedirects は redirect: 'follow' (デフォルト) で処理され、細かい制限は標準では困難なため削除
+      const { timeout: _timeout, maxRedirects: _maxRedirects, ...fetchOptions } = options;
+
       const defaultOptions = {
-        timeout: 10000,
+        signal: controller.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         },
-        maxRedirects: 5,
-        ...options
+        ...fetchOptions
       };
 
-      const response = await axios.get(url, defaultOptions);
-      const html = response.data;
+      const response = await fetch(url, defaultOptions);
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      const html = await response.text();
       const $ = cheerio.load(html);
 
       // 基本情報の抽出
@@ -58,6 +67,8 @@ class MetaTagExtractor {
     } catch (error) {
       console.error(`Error extracting meta from ${url}:`, error.message);
       throw error;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 

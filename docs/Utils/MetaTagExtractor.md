@@ -3,7 +3,7 @@
 ## 概要
 
 `MetaTagExtractor`は、`open-graph-scraper`の制限を克服するために作成された、より堅牢なメタ情報抽出クラスです。
-axios と cheerio を使用して、任意のWebページからメタデータを抽出します。
+fetch API と cheerio を使用して、任意のWebページからメタデータを抽出します。
 
 ## 機能
 
@@ -77,7 +77,7 @@ const metaWithOptions = await extractor.extractMeta('https://example.com', {
 
 ## 依存関係
 
-- `axios` - HTTP リクエスト
+- `fetch API` - HTTP リクエスト
 - `cheerio` - HTML パース（新規追加）
 
 ## 注意事項

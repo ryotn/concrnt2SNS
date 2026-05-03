@@ -257,7 +257,7 @@ static BASE_URL = `https://graph.threads.net/${Threads.graphApiVersion}/`;
 
 ## 依存関係
 
-- `axios` - HTTP リクエスト
+- `fetch API` - HTTP リクエスト
 - `fs/promises` - ファイル読み書き（トークン保存）
 
 ## 使用例
