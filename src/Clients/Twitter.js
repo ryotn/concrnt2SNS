@@ -1,6 +1,9 @@
 import { TwitterApi } from 'twitter-api-v2'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+const MAX_BUFFER_RETRYS = 5
+const BUFFER_RETRY_DELAY = 1000
+
 // コンカレのラベルとTwitterのラベルの対応
 // hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
 // warnはotherにしておく
@@ -40,18 +43,18 @@ class Twitter {
             const mediaURLs = filesBuffer.map(item => item.url)
             const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
             let bufferSuccess = false
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < MAX_BUFFER_RETRYS; i++) {
                 try {
                     await this.tweetAtBuffer(text, mediaURLs, mediaType)
                     bufferSuccess = true
                     break
                 } catch (error) {
                     console.error(`Buffer attempt ${i + 1} failed:`, error.message || error)
-                    if (i < 4) await this.sleep(1000)
+                    if (i < MAX_BUFFER_RETRYS - 1) await this.sleep(BUFFER_RETRY_DELAY)
                 }
             }
             if (bufferSuccess) return
-            console.error("Buffer failed after 5 attempts, falling back...")
+            console.error(`Buffer failed after ${MAX_BUFFER_RETRYS} attempts, falling back...`)
         }
 
         if (filesBuffer.length === 1 && filesBuffer[0].type === "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
@@ -170,13 +173,15 @@ class Twitter {
             }
 
             // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
-            if (responseData && responseData.errors) {
-                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, responseData.errors)
-                throw new Error(`GraphQL Errors: ${JSON.stringify(responseData.errors)}`)
-            } else if (responseData && responseData.data && responseData.data.createPost && responseData.data.createPost.message) {
+            if (responseData?.errors) {
+                const error = new Error(`GraphQL Errors: ${JSON.stringify(responseData.errors)}`)
+                error.response = { status: 200, data: responseData }
+                throw error
+            } else if (responseData?.data?.createPost?.message) {
                 // ... on MutationError returns a message inside the data
-                console.error(`Failed to tweet via Buffer. MutationError:`, responseData.data.createPost.message)
-                throw new Error(`MutationError: ${responseData.data.createPost.message}`)
+                const error = new Error(`MutationError: ${responseData.data.createPost.message}`)
+                error.response = { status: 200, data: responseData }
+                throw error
             }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
