@@ -50,11 +50,14 @@ class Twitter {
                     break
                 } catch (error) {
                     console.error(`Buffer attempt ${i + 1} failed:`, error.message || error)
-                    if (i < MAX_BUFFER_RETRYS - 1) await this.sleep(BUFFER_RETRY_DELAY)
+                    const status = error.response?.status
+                    const shouldRetry = !status || status >= 500 || status === 429
+                    if (!shouldRetry || i === MAX_BUFFER_RETRYS - 1) break
+                    await this.sleep(BUFFER_RETRY_DELAY)
                 }
             }
             if (bufferSuccess) return
-            console.error(`Buffer failed after ${MAX_BUFFER_RETRYS} attempts, falling back...`)
+            console.error(`Buffer failed, falling back...`)
         }
 
         if (filesBuffer.length === 1 && filesBuffer[0].type === "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
@@ -172,7 +175,7 @@ class Twitter {
                 throw error
             }
 
-            // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
+            // Buffer GraphQL API returns 200 OK even for errors, need to check if top-level responseData.errors exists
             if (responseData?.errors) {
                 const error = new Error(`GraphQL Errors: ${JSON.stringify(responseData.errors)}`)
                 error.response = { status: 200, data: responseData }
@@ -184,8 +187,9 @@ class Twitter {
                 throw error
             }
         } catch (error) {
-            const responseStatus = error.response ? error.response.status : error.message
-            console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
+            if (!error.response) {
+                error.response = { status: 500, data: error.message }
+            }
             throw error
         }
     }
