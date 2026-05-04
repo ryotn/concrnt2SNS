@@ -36,26 +36,43 @@ class Twitter {
         const canUseBuffer = this.bufferToken && this.bufferChannelId && !isMediaFlag &&
             ((isImagesOnly && filesBuffer.length <= 4) || isVideoOnly)
 
-        try {
-            if (canUseBuffer) {
-                const mediaURLs = filesBuffer.map(item => item.url)
-                const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
+        if (canUseBuffer) {
+            const mediaURLs = filesBuffer.map(item => item.url)
+            const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
+            try {
                 await this.tweetAtBuffer(text, mediaURLs, mediaType)
                 return
-            } else if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+            } catch (error) {
+                console.error("Buffer failed, falling back...", error.message || error)
+            }
+        }
+
+        if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+            try {
                 await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
                 return
-            } else if (filesBuffer.length > 0 || isMediaFlag) {
-                const mediaIds = await this.uploadMedia(filesBuffer)
-                if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
-            } else if (this.webhookURL != undefined) {
+            } catch (error) {
+                console.error("Webhook (image) failed, falling back...", error.message || error)
+            }
+        }
+
+        if (filesBuffer.length === 0 && !isMediaFlag && this.webhookURL != undefined) {
+            try {
                 await this.tweetAtWebHook(this.webhookURL, text)
                 return
+            } catch (error) {
+                console.error("Webhook (text) failed, falling back...", error.message || error)
             }
-            
+        }
+
+        try {
+            if (filesBuffer.length > 0 || isMediaFlag) {
+                const mediaIds = await this.uploadMedia(filesBuffer)
+                if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
+            }
             await this.twitterClient.v2.tweet(payload)
         } catch (error) {
-            console.error(error)
+            console.error("Native Twitter API failed", error)
         }
     }
 
@@ -148,9 +165,11 @@ class Twitter {
             // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
             if (responseData && responseData.errors) {
                 console.error(`Failed to tweet via Buffer. GraphQL Errors:`, responseData.errors)
+                throw new Error(`GraphQL Errors: ${JSON.stringify(responseData.errors)}`)
             } else if (responseData && responseData.data && responseData.data.createPost && responseData.data.createPost.message) {
                 // ... on MutationError returns a message inside the data
                 console.error(`Failed to tweet via Buffer. MutationError:`, responseData.data.createPost.message)
+                throw new Error(`MutationError: ${responseData.data.createPost.message}`)
             }
         } catch (error) {
             const responseStatus = error.response ? error.response.status : error.message
