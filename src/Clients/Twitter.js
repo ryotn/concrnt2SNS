@@ -1,6 +1,9 @@
 import { TwitterApi } from 'twitter-api-v2'
 
 const MAX_MEDIA_UPLOAD_RETRYS = 3
+const MAX_BUFFER_RETRYS = 5
+const BUFFER_RETRY_DELAY = 1000
+
 // コンカレのラベルとTwitterのラベルの対応
 // hardが何を指すのか不明・・・とりあえずgraphic_violenceにしておく
 // warnはotherにしておく
@@ -36,41 +39,80 @@ class Twitter {
         const canUseBuffer = this.bufferToken && this.bufferChannelId && !isMediaFlag &&
             ((isImagesOnly && filesBuffer.length <= 4) || isVideoOnly)
 
-        try {
-            if (canUseBuffer) {
-                const mediaURLs = filesBuffer.map(item => item.url)
-                const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
-                await this.tweetAtBuffer(text, mediaURLs, mediaType)
-                return
-            } else if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+        if (canUseBuffer) {
+            const mediaURLs = filesBuffer.map(item => item.url)
+            const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
+            let bufferSuccess = false
+            for (let i = 0; i < MAX_BUFFER_RETRYS; i++) {
+                try {
+                    await this.tweetAtBuffer(text, mediaURLs, mediaType)
+                    bufferSuccess = true
+                    break
+                } catch (error) {
+                    console.error(`Buffer attempt ${i + 1} failed:`, error.message || error)
+
+                    let shouldRetry = true
+                    const status = error.response?.status
+                    const responseData = error.response?.data
+
+                    if (status && status >= 400 && status < 500 && status !== 429) {
+                        shouldRetry = false
+                    }
+
+                    if (status === 200 && responseData?.errors) {
+                        const code = responseData.errors[0]?.extensions?.code
+                        if (code !== 'UNEXPECTED' && code !== 'RATE_LIMIT_EXCEEDED') {
+                            shouldRetry = false
+                        }
+                    }
+
+                    if (!shouldRetry || i === MAX_BUFFER_RETRYS - 1) break
+                    await this.sleep(BUFFER_RETRY_DELAY)
+                }
+            }
+            if (bufferSuccess) return
+            console.error(`Buffer failed, falling back...`)
+        }
+
+        if (filesBuffer.length === 1 && filesBuffer[0].type === "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+            try {
                 await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
                 return
-            } else if (filesBuffer.length > 0 || isMediaFlag) {
-                const mediaIds = await this.uploadMedia(filesBuffer)
-                if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
-            } else if (this.webhookURL != undefined) {
+            } catch (error) {
+                console.error("Webhook (image) failed, falling back...", error.message || error)
+            }
+        }
+
+        if (filesBuffer.length === 0 && this.webhookURL) {
+            try {
                 await this.tweetAtWebHook(this.webhookURL, text)
                 return
+            } catch (error) {
+                console.error("Webhook (text) failed, falling back...", error.message || error)
             }
-            
+        }
+
+        try {
+            if (filesBuffer.length > 0 || isMediaFlag) {
+                const mediaIds = await this.uploadMedia(filesBuffer)
+                if (mediaIds.length > 0) payload.media = { media_ids: mediaIds }
+            }
             await this.twitterClient.v2.tweet(payload)
         } catch (error) {
-            console.error(error)
+            console.error("Native Twitter API failed", error)
         }
     }
 
     async uploadMedia(filesBuffer) {
         const ids = await Promise.all(filesBuffer.map(async (file) => {
-            let retryCount = 0
-
             const buffer = file.buffer
             const type = file.type
             const option = { mimeType: type }
-            if (type == "video/mp4") {
+            if (type === "video/mp4") {
                 option.longVideo = true
             }
 
-            while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+            for (let retryCount = 0; retryCount < MAX_MEDIA_UPLOAD_RETRYS; retryCount++) {
                 try {
                     const id = await this.twitterClient.v1.uploadMedia(buffer, option)
                     if (file.flag) {
@@ -78,10 +120,9 @@ class Twitter {
                     }
                     return id
                 } catch (error) {
-                    retryCount++
-                    console.error(`Retry uploadMedia. retryCount:${retryCount}`)
+                    console.error(`Retry uploadMedia. retryCount:${retryCount + 1}`)
                     console.error(error)
-                    await this.sleep(1000)
+                    if (retryCount < MAX_MEDIA_UPLOAD_RETRYS - 1) await this.sleep(1000)
                 }
             }
 
@@ -145,16 +186,21 @@ class Twitter {
                 throw error
             }
 
-            // Buffer GraphQL API returns 200 OK even for errors, need to check if response.data.errors exists
-            if (responseData && responseData.errors) {
-                console.error(`Failed to tweet via Buffer. GraphQL Errors:`, responseData.errors)
-            } else if (responseData && responseData.data && responseData.data.createPost && responseData.data.createPost.message) {
+            // Buffer GraphQL API returns 200 OK even for errors, need to check if top-level responseData.errors exists
+            if (responseData?.errors) {
+                const error = new Error(`GraphQL Errors: ${JSON.stringify(responseData.errors)}`)
+                error.response = { status: 200, data: responseData }
+                throw error
+            } else if (responseData?.data?.createPost?.message) {
                 // ... on MutationError returns a message inside the data
-                console.error(`Failed to tweet via Buffer. MutationError:`, responseData.data.createPost.message)
+                const error = new Error(`MutationError: ${responseData.data.createPost.message}`)
+                error.response = { status: 200, data: responseData }
+                throw error
             }
         } catch (error) {
-            const responseStatus = error.response ? error.response.status : error.message
-            console.error(`Failed to tweet via Buffer. status: ${responseStatus}`, error.response?.data || "")
+            if (!error.response) {
+                error.response = { status: 500, data: error.message }
+            }
             throw error
         }
     }
