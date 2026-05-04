@@ -105,16 +105,14 @@ class Twitter {
 
     async uploadMedia(filesBuffer) {
         const ids = await Promise.all(filesBuffer.map(async (file) => {
-            let retryCount = 0
-
             const buffer = file.buffer
             const type = file.type
             const option = { mimeType: type }
-            if (type == "video/mp4") {
+            if (type === "video/mp4") {
                 option.longVideo = true
             }
 
-            while (retryCount < MAX_MEDIA_UPLOAD_RETRYS) {
+            for (let retryCount = 0; retryCount < MAX_MEDIA_UPLOAD_RETRYS; retryCount++) {
                 try {
                     const id = await this.twitterClient.v1.uploadMedia(buffer, option)
                     if (file.flag) {
@@ -122,10 +120,9 @@ class Twitter {
                     }
                     return id
                 } catch (error) {
-                    retryCount++
-                    console.error(`Retry uploadMedia. retryCount:${retryCount}`)
+                    console.error(`Retry uploadMedia. retryCount:${retryCount + 1}`)
                     console.error(error)
-                    await this.sleep(1000)
+                    if (retryCount < MAX_MEDIA_UPLOAD_RETRYS - 1) await this.sleep(1000)
                 }
             }
 
