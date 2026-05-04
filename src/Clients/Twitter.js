@@ -54,7 +54,7 @@ class Twitter {
             console.error("Buffer failed after 5 attempts, falling back...")
         }
 
-        if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
+        if (filesBuffer.length === 1 && filesBuffer[0].type === "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
             try {
                 await this.tweetAtWebHook(this.tweetAtWebHookImage, text, filesBuffer[0].url)
                 return
@@ -63,7 +63,7 @@ class Twitter {
             }
         }
 
-        if (filesBuffer.length === 0 && !isMediaFlag && this.webhookURL != undefined) {
+        if (filesBuffer.length === 0 && this.webhookURL) {
             try {
                 await this.tweetAtWebHook(this.webhookURL, text)
                 return
