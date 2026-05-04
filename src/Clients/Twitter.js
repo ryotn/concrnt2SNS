@@ -39,12 +39,19 @@ class Twitter {
         if (canUseBuffer) {
             const mediaURLs = filesBuffer.map(item => item.url)
             const mediaType = isVideoOnly ? 'video' : (mediaURLs.length > 0 ? 'image' : undefined)
-            try {
-                await this.tweetAtBuffer(text, mediaURLs, mediaType)
-                return
-            } catch (error) {
-                console.error("Buffer failed, falling back...", error.message || error)
+            let bufferSuccess = false
+            for (let i = 0; i < 5; i++) {
+                try {
+                    await this.tweetAtBuffer(text, mediaURLs, mediaType)
+                    bufferSuccess = true
+                    break
+                } catch (error) {
+                    console.error(`Buffer attempt ${i + 1} failed:`, error.message || error)
+                    if (i < 4) await this.sleep(1000)
+                }
             }
+            if (bufferSuccess) return
+            console.error("Buffer failed after 5 attempts, falling back...")
         }
 
         if (filesBuffer.length == 1 && filesBuffer[0].type == "image/jpeg" && this.tweetAtWebHookImage && !isMediaFlag) {
