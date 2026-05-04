@@ -50,9 +50,22 @@ class Twitter {
                     break
                 } catch (error) {
                     console.error(`Buffer attempt ${i + 1} failed:`, error.message || error)
+
+                    let shouldRetry = true
                     const status = error.response?.status
-                    const isFetchDimensionsError = error.message && error.message.includes("Failed to fetch image dimensions")
-                    const shouldRetry = !status || status >= 500 || status === 429 || isFetchDimensionsError
+                    const responseData = error.response?.data
+
+                    if (status && status >= 400 && status < 500 && status !== 429) {
+                        shouldRetry = false
+                    }
+
+                    if (status === 200 && responseData?.errors) {
+                        const code = responseData.errors[0]?.extensions?.code
+                        if (code !== 'UNEXPECTED' && code !== 'RATE_LIMIT_EXCEEDED') {
+                            shouldRetry = false
+                        }
+                    }
+
                     if (!shouldRetry || i === MAX_BUFFER_RETRYS - 1) break
                     await this.sleep(BUFFER_RETRY_DELAY)
                 }
