@@ -92,13 +92,14 @@ class Twitter {
     }
 
     async tweetAtBuffer(text, mediaURLs = [], mediaType = undefined) {
-        let assets = ""
-        if (mediaType === 'image' && mediaURLs.length > 0) {
-            const imagesMap = mediaURLs.map(url => `{ url: "${url}" }`).join(", ")
-            assets = `assets: { images: [${imagesMap}] }`
-        } else if (mediaType === 'video' && mediaURLs.length > 0) {
-            assets = `assets: { videos: [{ url: "${mediaURLs[0]}" }] }`
-        }
+        // Buffer経由での投稿は画像4枚まで、動画1本までの制限があるため、
+        // mediaTypeとmediaURLsの内容に応じてassetsの内容を組み立てる
+        const medias = (mediaType === 'image' && mediaURLs.length <= 4)
+            ? mediaURLs.map(url => `{ image: { url: ${JSON.stringify(url)} } }`)
+            : (mediaType === 'video' && mediaURLs.length > 0
+                ? [`{ video: { url: ${JSON.stringify(mediaURLs[0])} } }`]
+                : [])
+        const assets = (medias.length > 0) ? `assets: [${medias.join(", ")}]` : ""
 
         // text must be properly escaped for graphql string literal
         const escapedText = JSON.stringify(text)
