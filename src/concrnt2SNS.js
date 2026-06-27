@@ -55,36 +55,41 @@ let lastMessageResourceID = null
 let homeTimeline = null
 
 async function start() {
-    const subscription = await ccClient.newSocketListener()
-    homeTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
+    try {
+        const subscription = await ccClient.newSocketListener()
+        homeTimeline = LISTEN_TIMELINE || ccClient.user.homeTimeline
 
-    subscription.on('MessageCreated', async (event) => {
-        let document = event.parsedDoc
-        let resourceID = event.item.resourceID
-        if (!document) {
-            try {
-                let message = await ccClient.getMessage(resourceID, event.item.owner, event.item.timelineID.split('@')[1])
-                if (!message || !message.document) {
-                    console.error("Failed to fetch message or document for resourceID:", resourceID)
+        subscription.on('MessageCreated', async (event) => {
+            let document = event.parsedDoc
+            let resourceID = event.item.resourceID
+            if (!document) {
+                try {
+                    let message = await ccClient.getMessage(resourceID, event.item.owner, event.item.timelineID.split('@')[1])
+                    if (!message || !message.document) {
+                        console.error("Failed to fetch message or document for resourceID:", resourceID)
+                        return
+                    }
+                    document = message.document
+                } catch (err) {
+                    console.error("Error fetching message for resourceID:", resourceID, err)
                     return
                 }
-                document = message.document
-            } catch (err) {
-                console.error("Error fetching message for resourceID:", resourceID, err)
+            }
+            if (document.signer !== ccClient.ccid) {
                 return
             }
-        }
-        if (document.signer !== ccClient.ccid) {
-            return
-        }
-        if (lastMessageResourceID && lastMessageResourceID === resourceID) {
-            return
-        }
-        lastMessageResourceID = resourceID
-        receivedPost(document)
-    })
+            if (lastMessageResourceID && lastMessageResourceID === resourceID) {
+                return
+            }
+            lastMessageResourceID = resourceID
+            receivedPost(document)
+        })
 
-    subscription.listen([homeTimeline, TW_LISTEN_TIMELINE, BS_LISTEN_TIMELINE, THREADS_LISTEN_TIMELINE, NOSTR_LISTEN_TIMELINE].filter(Boolean))
+        subscription.listen([homeTimeline, TW_LISTEN_TIMELINE, BS_LISTEN_TIMELINE, THREADS_LISTEN_TIMELINE, NOSTR_LISTEN_TIMELINE].filter(Boolean))
+    } catch (err) {
+        console.error("Failed to start Concrnt listener. Exit for restart.", err)
+        process.exit(1)
+    }
 }
 
 function receivedPost(document) {
