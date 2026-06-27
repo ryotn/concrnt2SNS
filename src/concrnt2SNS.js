@@ -87,7 +87,7 @@ async function start() {
 
         subscription.listen([homeTimeline, TW_LISTEN_TIMELINE, BS_LISTEN_TIMELINE, THREADS_LISTEN_TIMELINE, NOSTR_LISTEN_TIMELINE].filter(Boolean))
     } catch (err) {
-        console.error("Failed to start Concrnt listener:", err)
+        console.error("Failed to start Concrnt listener:", err?.stack || err)
         process.exit(1)
     }
 }
