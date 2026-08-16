@@ -4,6 +4,7 @@
     "test": "node --env-file=.env --inspect ./src/test.js"
   },
   "type": "module",
+  "engines": { "node": ">=20.18.1" },
   "dependencies": {
     "@atproto/api": "^0.12.29",
     "@concrnt/client": "^2.0.5",
