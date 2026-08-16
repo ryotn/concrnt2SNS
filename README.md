@@ -28,7 +28,7 @@ NOSTR_PRIVATE_KEY="Nostrのプライベートキー"
 NOSTR_RELAYS="wss://から始まるリレーサーバーのURL、複数指定する場合はカンマで区切る 例:wss://relay1.com,wss://relay2.com,wss://relay3.com"
 NOSTR_LISTEN_TIMELINE="Nostrに転送するタイムラインのID、LISTEN_TIMELINEと同じ形式で1つ指定"
 CC_SUBKEY="コンカレのサブキー"
-LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合はID@host形式で1つ指定、このタイムラインにポストした場合はすべてのSNSに転送される（ただし、各サービスの *_LISTEN_TIMELINE が設定されている場合はそちらが優先されます）"
+LISTEN_TIMELINE="ホーム以外のタイムラインを指定したい場合は[LISTEN_TIMELINEについて]を参照してください。このタイムラインにポストした場合はすべてのSNSに転送されます。（ただし、各サービスの *_LISTEN_TIMELINE が設定されている場合はそちらが優先されます）"
 
 // Option（使わない場合は入れないこと）
 TW_WEBHOOK_URL="メディアなしのTweetをIFTTT経由で行う場合のWebHookURL"
@@ -38,6 +38,33 @@ BUFFER_TWITTER_CHANNEL_ID="Bufferで連携したTwitterアカウントのChannel
 ```
 
 4. `npm start`で多分動く！！
+
+## LISTEN_TIMELINEについて  
+
+v2移行により、タイムラインの形式が変更されました。  
+  
+- v1形式  
+{ID}@{fqdn}  
+- v2形式  
+cckv://{fqdn}/concrnt.world/communities/{ID}  
+  
+※ fqdn  
+ドメイン（例：cc.ryotn.com）  
+※ ID  
+タイムラインのID  
+  
+指定したいタイムラインを開いてURLの後半`cckv`から最後までがv2でのLISTEN_TIMELINEに指定する文字列になります。  
+ただURLに入っている文字列はURLエンコードされているので、デコードする必要があります。  
+[URLエンコード・デコード](https://tech-unlimited.com/urlencode.html)などでデコードしてください。  
+
+例：  
+
+- ariakeのarrival  
+URL: [https://ariake.concrnt.net/timeline/cckv%3A%2F%2Fariake.concrnt.net%2Fconcrnt.world%2Fcommunities%2Ftar69vv26r5s4wk0r067v20bvyw](https://ariake.concrnt.net/timeline/cckv%3A%2F%2Fariake.concrnt.net%2Fconcrnt.world%2Fcommunities%2Ftar69vv26r5s4wk0r067v20bvyw)  
+指定する文字列: `cckv://ariake.concrnt.net/concrnt.world/communities/tar69vv26r5s4wk0r067v20bvyw`  
+- FluffySocial出張所
+URL: [https://ariake.concrnt.net/timeline/cckv%3A%2F%2Fariake.concrnt.net%2Fconcrnt.world%2Fcommunities%2Ftvtwreay639zpgjdw067y1qmj28](https://ariake.concrnt.net/timeline/cckv%3A%2F%2Fariake.concrnt.net%2Fconcrnt.world%2Fcommunities%2Ftvtwreay639zpgjdw067y1qmj28)  
+指定する文字列: `cckv://ariake.concrnt.net/concrnt.world/communities/tvtwreay639zpgjdw067y1qmj28`  
 
 ## フラグ付きメディアについて
 
