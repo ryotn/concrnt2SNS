@@ -182,11 +182,7 @@ async function start() {
                     recentResourceIDs.delete(oldest)
                 }
 
-                try {
-                    await Promise.resolve(receivedPost(document))
-                } catch (err) {
-                    console.error('receivedPost failed', err)
-                }
+                receivedPost(document)
             }
         }
     )
@@ -249,12 +245,24 @@ function receivedPost(document) {
     })
 
     if (text.length > 0 || files.length > 0) {
-        media.downloader(files).then(filesBuffer => {
-            if (TW_ENABLE && isPostTw) twitterClient.tweet(text, filesBuffer)
-            if (BS_ENABLE && isPostBs) bskyClient.post(text, urls, filesBuffer, ccClient)
-            if (THREADS_ENABLE && isPostThreads) threadsClient.post(text, filesBuffer)
-            if (NOSTR_ENABLE && isPostNostr) nosterClient.post(text, filesBuffer)
-        })
+        media.downloader(files)
+            .then(async filesBuffer => {
+                const postTasks = []
+                if (TW_ENABLE && isPostTw && twitterClient) postTasks.push(twitterClient.tweet(text, filesBuffer))
+                if (BS_ENABLE && isPostBs && bskyClient) postTasks.push(bskyClient.post(text, urls, filesBuffer, ccClient))
+                if (THREADS_ENABLE && isPostThreads && threadsClient) postTasks.push(threadsClient.post(text, filesBuffer))
+                if (NOSTR_ENABLE && isPostNostr && nosterClient) postTasks.push(nosterClient.post(text, filesBuffer))
+
+                const results = await Promise.allSettled(postTasks)
+                results.forEach((result) => {
+                    if (result.status === 'rejected') {
+                        console.error('Post delivery failed', result.reason)
+                    }
+                })
+            })
+            .catch(err => {
+                console.error('receivedPost failed', err)
+            })
     }
 }
 
