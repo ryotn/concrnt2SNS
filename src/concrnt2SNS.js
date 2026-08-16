@@ -261,7 +261,7 @@ function receivedPost(document) {
                 })
             })
             .catch(err => {
-                console.error('receivedPost failed', err)
+                console.error('Media download failed', err)
             })
     }
 }
