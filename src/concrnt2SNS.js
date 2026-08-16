@@ -101,7 +101,7 @@ async function start() {
                 // document will be filled either from inner or from an embedded reference
                 let document = null
 
-                // detect reference (rereoute) documents
+                // detect reference (reroute) documents
                 const isReference = (parsedDoc.schema && String(parsedDoc.schema).includes('reference.json')) || (inner && typeof inner.href === 'string')
                 if (isReference) {
                     const href = inner.href
