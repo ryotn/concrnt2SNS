@@ -41,12 +41,12 @@ BUFFER_TWITTER_CHANNEL_ID="Bufferで連携したTwitterアカウントのChannel
 
 ## LISTEN_TIMELINEについて  
 
-v2移行により、タイムラインの形式が変更されました。  
+v2移行により、LISTEN_TIMELINE の指定形式が変更されました（v2では v2形式のみ対応）。  
   
-- v1形式  
-{ID}@{fqdn}  
-- v2形式  
-cckv://{fqdn}/concrnt.world/communities/{ID}  
+- v1形式（v1のみ）  
+`{ID}@{fqdn}`  
+- v2形式（v2）  
+`cckv://{fqdn}/concrnt.world/communities/{ID}`
   
 ※ fqdn  
 ドメイン（例：cc.ryotn.com）  
