@@ -53,9 +53,9 @@ v2移行により、LISTEN_TIMELINE の指定形式が変更されました（v2
 ※ ID  
 タイムラインのID  
   
-指定したいタイムラインを開いてURLの後半`cckv`から最後までがv2でのLISTEN_TIMELINEに指定する文字列になります。  
-ただURLに入っている文字列はURLエンコードされているので、デコードする必要があります。  
-[URLエンコード・デコード](https://tech-unlimited.com/urlencode.html)などでデコードしてください。  
+指定したいタイムラインを開き、URL末尾の `cckv%3A...` 部分を取り出して URL デコードしたものが、v2でのLISTEN_TIMELINEに指定する文字列になります。  
+デコードはブラウザ/OSの機能や任意のURLデコードツールを利用してください。  
+[URLエンコード・デコード](https://tech-unlimited.com/urlencode.html) などでもデコードできます。
 
 例：  
 
